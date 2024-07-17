@@ -26,6 +26,6 @@ The python code can then be used directly in python
 
 The API doesn't completely match `bilby-cython`:
 - there is currently no support for writing `numpy` `ufuncs` using `PyO3` so the vectorized version of `greenwich_mean_sidereal_time` is implemented as `bilby_rust.time.greenwich_mean_sidereal_time_vectorized`.
-- additional functionality for dealing with time- and frequency-dependent antenna response functions is additionally implemented using, e.g., `bilby_rust.geometry.{time_dependent_polarization_tensor,time_delay_from_geocenter_vectorized,frequency_dependent_detector_tensor}`.
+- additional functionality for dealing with time- and frequency-dependent antenna response functions is additionally implemented using, e.g., `bilby_rust.geometry.{time_dependent_polarization_tensor,time_delay_from_geocenter_vectorized,frequency_dependent_detector_tensor}`. This was translated from an [implementation](https://git.ligo.org/jacob.golomb/bilby-cython/-/tree/long_wavelength) by @jacobgolomb for `bilby-cython`.
 - the convention for the detector-based reference frame from [Roulet+](https://arxiv.org/abs/2207.03508) is included as `bilby_rust.geometry.zenith_azimuth_to_theta_phi_optimized`.
 - calculation of the antenna response that projects the detector pattern against the polarization tensors using `bilby_rust.geometry.{antenna_response,antenna_response_all_model,antenna_response_tensor_modes}`.
