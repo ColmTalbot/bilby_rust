@@ -1,0 +1,15 @@
+[package]
+name = "bilby_rust"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+chrono = "*"
+physical_constants = "*"
+numpy = "*"
+pyo3 = { version = "*", features = ["chrono", "extension-module", "num-complex"] }
+num-complex = "*"
+
+[lib]
+name = "bilby_rust"
+crate-type = ["cdylib"]
