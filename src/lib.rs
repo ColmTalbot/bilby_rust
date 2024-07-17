@@ -20,6 +20,9 @@ fn bilby_rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
 
     let geometry_: Bound<PyModule> = PyModule::new_bound(m.py(), "geometry")?;
     py_run!(m.py(), geometry_, "import sys; sys.modules['bilby_rust.geometry'] = geometry_");
+    geometry_.add_function(wrap_pyfunction!(geometry::antenna_response, &geometry_)?)?;
+    geometry_.add_function(wrap_pyfunction!(geometry::antenna_response_all_modes, &geometry_)?)?;
+    geometry_.add_function(wrap_pyfunction!(geometry::antenna_response_tensor_modes, &geometry_)?)?;
     geometry_.add_function(wrap_pyfunction!(geometry::calculate_arm, &geometry_)?)?;
     geometry_.add_function(wrap_pyfunction!(geometry::detector_tensor, &geometry_)?)?;
     geometry_.add_function(wrap_pyfunction!(geometry::frequency_dependent_detector_tensor, &geometry_)?)?;

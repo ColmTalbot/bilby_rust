@@ -21,6 +21,10 @@ pub fn cross_product(vertex_1: &[f64; 3], vertex_2: &[f64; 3]) -> [f64; 3] {
     ]
 }
 
+pub fn inner_product(v: &[f64; 3], w: &[f64; 3]) -> f64 {
+    v.iter().zip(w.iter()).map(|(a, b)| a * b).sum()
+}
+
 pub fn normalized(v: &[f64; 3]) -> [f64; 3] {
     let norm = norm(v);
     [v[0] / norm, v[1] / norm, v[2] / norm]
