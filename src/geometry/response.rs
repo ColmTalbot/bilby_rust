@@ -4,8 +4,11 @@ use pyo3::{pyfunction, Py, Python};
 use numpy::{Complex64, PyArray1, PyArray2, PyArray3};
 use num_complex::Complex;
 
-use super::util::ra_dec_to_theta_phi;
-use super::{polarization::polarization_tensor, util::{ComplexThreeMatrix, ThreeMatrix, ThreeVector}};
+use super::{
+    ra_dec_to_theta_phi,
+    polarization::polarization_tensor,
+    util::{ComplexThreeMatrix, SphericalAngles, ThreeMatrix, ThreeVector}
+};
 
 fn projection(
     frequency: &f64, cos_angle: f64, free_spectral_range: f64
@@ -29,8 +32,8 @@ pub fn frequency_dependent_detector_tensor(
     free_spectral_range: f64,
 ) -> Py<PyArray3<Complex64>> {
 
-    let x = ThreeVector::from_array(&x);
-    let y = ThreeVector::from_array(&y);
+    let x: ThreeVector = x.into();
+    let y: ThreeVector = y.into();
     let x_tensor = x.outer(&x);
     let y_tensor = y.outer(&y);
 
@@ -67,10 +70,8 @@ fn _single_finite_size_detector_tensor(
 }
 
 fn line_of_sight(ra: f64, dec: f64, gps_time: f64) -> ThreeVector {
-    let theta_phi = ra_dec_to_theta_phi(ra, dec, gps_time);
-    let theta = theta_phi.0;
-    let phi = theta_phi.1;
-    ThreeVector::from_spherical_angles(theta, phi)
+    let theta_phi: SphericalAngles = ra_dec_to_theta_phi(ra, dec, gps_time).into();
+    theta_phi.into()
 }
 
 #[allow(dead_code)]
@@ -86,8 +87,8 @@ pub fn antenna_response(
     frequency: Vec<f64>,
     free_spectral_range: f64,
 ) -> Py<PyArray1<Complex<f64>>> {
-    let x = ThreeVector::from_array(&x);
-    let y = ThreeVector::from_array(&y);
+    let x: ThreeVector = x.into();
+    let y: ThreeVector = y.into();
     let x_tensor = x.outer(&x);
     let y_tensor = y.outer(&y);
 
@@ -123,8 +124,8 @@ pub fn antenna_response_tensor_modes(
     frequency: Vec<f64>,
     free_spectral_range: f64,
 ) -> Py<PyArray2<Complex<f64>>> {
-    let x = ThreeVector::from_array(&x);
-    let y = ThreeVector::from_array(&y);
+    let x: ThreeVector = x.into();
+    let y: ThreeVector = y.into();
     let x_tensor = x.outer(&x);
     let y_tensor = y.outer(&y);
 
@@ -163,8 +164,8 @@ pub fn antenna_response_all_modes(
     frequency: Vec<f64>,
     free_spectral_range: f64,
 ) -> Py<PyArray2<Complex<f64>>> {
-    let x = ThreeVector::from_array(&x);
-    let y = ThreeVector::from_array(&y);
+    let x: ThreeVector = x.into();
+    let y: ThreeVector = y.into();
     let x_tensor = x.outer(&x);
     let y_tensor = y.outer(&y);
 

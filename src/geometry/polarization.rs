@@ -1,17 +1,20 @@
 use::std::f64::consts::FRAC_PI_2;
 
-use super::util::{ra_dec_to_theta_phi, ThreeMatrix, ThreeVector};
+use super::{
+    ra_dec_to_theta_phi,
+    util::{SphericalAngles, ThreeMatrix, ThreeVector}
+};
 
 fn m_vector(theta: f64, phi: f64, psi: f64) -> ThreeVector {
-    let vec1 = ThreeVector::from_spherical_angles(theta - FRAC_PI_2, phi) * psi.sin();
-    let vec2 = ThreeVector::from_spherical_angles(FRAC_PI_2, phi - FRAC_PI_2) * psi.cos();
-    vec1 + vec2
+    let vec1:ThreeVector = SphericalAngles{zenith: theta - FRAC_PI_2, azimuth: phi}.into();
+    let vec2:ThreeVector = SphericalAngles{zenith: FRAC_PI_2, azimuth: phi - FRAC_PI_2}.into();
+    vec1 * psi.sin() + vec2 * psi.cos()
 }
 
 fn n_vector(theta: f64, phi: f64, psi: f64) -> ThreeVector {
-    let vec1 = ThreeVector::from_spherical_angles(theta - FRAC_PI_2, phi) * psi.cos();
-    let vec2 = ThreeVector::from_spherical_angles(FRAC_PI_2, phi - FRAC_PI_2) * psi.sin();
-    vec1 - vec2
+    let vec1:ThreeVector = SphericalAngles{zenith: theta - FRAC_PI_2, azimuth: phi}.into();
+    let vec2:ThreeVector = SphericalAngles{zenith: FRAC_PI_2, azimuth: phi - FRAC_PI_2}.into();
+    vec1 * psi.cos() - vec2 * psi.sin()
 }
 
 fn omega_vector(theta: f64, phi: f64, psi: f64) -> ThreeVector {

@@ -1,11 +1,32 @@
-use std::f64::consts::PI;
 use std::ops::{Add, Sub, Div, Mul};
 
 use num_complex::Complex;
-use pyo3::{Py, Python, pyfunction};
+use pyo3::{Py, Python};
 use numpy::{PyArray1, PyArray2};
 
-use crate::time;
+pub struct SphericalAngles {
+    pub zenith: f64,
+    pub azimuth: f64,
+}
+
+impl From<SphericalAngles> for ThreeVector {
+    fn from(angles: SphericalAngles) -> Self {
+        Self {
+            x: angles.zenith.sin() * angles.azimuth.cos(),
+            y: angles.zenith.sin() * angles.azimuth.sin(),
+            z: angles.zenith.cos(),
+        }
+    }
+}
+
+impl From<(f64, f64)> for SphericalAngles {
+    fn from(pair: (f64, f64)) -> Self {
+        Self {
+            zenith: pair.0,
+            azimuth: pair.1,
+        }
+    }
+}
 
 pub struct ThreeVector {
     pub x: f64,
@@ -28,21 +49,6 @@ pub struct ComplexThreeMatrix {
 }
 
 impl ThreeVector {
-    pub fn from_array(array: &[f64; 3]) -> Self {
-        Self {
-            x: array[0],
-            y: array[1],
-            z: array[2],
-        }
-    }
-
-    pub fn from_spherical_angles(theta: f64, phi: f64) -> Self {
-        Self {
-            x: theta.sin() * phi.cos(),
-            y: theta.sin() * phi.sin(),
-            z: theta.cos(),
-        }
-    }
 
     pub fn dot(&self, other: &Self) -> f64 {
         self.x * other.x + self.y * other.y + self.z * other.z
@@ -90,22 +96,27 @@ impl ThreeVector {
             ]
         }
     }
+}
 
-    pub fn to_pyarray(&self) -> Py<PyArray1<f64>> {
-        let output = vec![self.x, self.y, self.z];
+impl From<ThreeVector> for [f64; 3] {
+    fn from(vector: ThreeVector) -> Self {
+        [vector.x, vector.y, vector.z]
+    }
+}
+
+impl From<&ThreeVector> for Vec<f64> {
+    fn from(vector: &ThreeVector) -> Self {
+        vec![vector.x, vector.y, vector.z]
+    }
+}
+
+impl From<ThreeVector> for Py<PyArray1<f64>> {
+    fn from(vector: ThreeVector) -> Self {
+        let output = vec![vector.x, vector.y, vector.z];
         Python::with_gil(|py| {
             PyArray1::from_vec_bound(py, output).unbind()
         })
     }
-
-    pub fn to_vec(&self) -> Vec<f64> {
-        vec![self.x, self.y, self.z]
-    }
-
-    fn to_array(&self) -> [f64; 3] {
-        [self.x, self.y, self.z]
-    }
-
 }
 
 impl Clone for ThreeVector {
@@ -200,26 +211,17 @@ impl Div<f64> for ThreeVector {
     }
 }
 
+impl From<[f64; 3]> for ThreeVector {
+    fn from(array: [f64; 3]) -> Self {
+        Self {
+            x: array[0],
+            y: array[1],
+            z: array[2],
+        }
+    }
+}
+
 impl ThreeMatrix {
-
-    pub fn to_array(&self) -> [[f64; 3]; 3] {
-        [
-            self.rows[0].to_array(),
-            self.rows[1].to_array(),
-            self.rows[2].to_array(),
-        ]
-    }
-
-    pub fn to_vec(&self) -> Vec<Vec<f64>> {
-        self.rows.iter().map(|row| row.to_vec()).collect()
-    }
-
-    pub fn to_pyarray(&self) -> Py<PyArray2<f64>> {
-        let output: Vec<Vec<f64>> = self.rows.iter().map(|row| vec![row.x, row.y, row.z]).collect();
-        Python::with_gil(|py| {
-            PyArray2::from_vec2_bound(py, &output).unwrap().unbind()
-        })
-    }
 
     pub fn iter(&self) -> std::slice::Iter<ThreeVector> {
         self.rows.iter()
@@ -231,6 +233,31 @@ impl ThreeMatrix {
             y: self.rows[1].dot(other),
             z: self.rows[2].dot(other),
         }
+    }
+}
+
+impl From<ThreeMatrix> for [[f64; 3]; 3] {
+    fn from(matrix: ThreeMatrix) -> Self {
+        [
+            matrix.rows[0].into(),
+            matrix.rows[1].into(),
+            matrix.rows[2].into(),
+        ]
+    }
+}
+
+impl From<ThreeMatrix> for Vec<Vec<f64>> {
+    fn from(matrix: ThreeMatrix) -> Self {
+        matrix.rows.iter().map(|row| row.into()).collect()
+    }
+}
+
+impl From<ThreeMatrix> for Py<PyArray2<f64>> {
+    fn from(matrix: ThreeMatrix) -> Self {
+        let output: Vec<Vec<f64>> = matrix.into();
+        Python::with_gil(|py| {
+            PyArray2::from_vec2_bound(py, &output).unwrap().unbind()
+        })
     }
 }
 
@@ -368,12 +395,4 @@ impl ComplexThreeMatrix {
     pub fn sum(&self) -> Complex<f64> {
         self.rows.iter().map(|row| row.x + row.y + row.z).sum()
     }
-}
-
-#[pyfunction]
-pub fn ra_dec_to_theta_phi(ra: f64, dec: f64, gps_time: f64) -> (f64, f64) {
-    let gmst = time::greenwich_mean_sidereal_time(gps_time) % (2.0 * PI);
-    let theta = PI / 2.0 - dec;
-    let phi = ra - gmst;
-    (theta, phi)
 }
