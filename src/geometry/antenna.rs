@@ -1,14 +1,11 @@
+use std::f64::consts::FRAC_PI_2;
+
 use physical_constants::SPEED_OF_LIGHT_IN_VACUUM;
 use pyo3::{PyErr, exceptions::PyValueError, pyfunction, Py, PyResult, Python};
 use numpy::{PyArray1, PyArray2};
 
-use crate::geometry::polarization::polarization_tensor;
-use crate::geometry::util::{
-    _wrap_2d_array_for_numpy,
-    add_three_by_three,
-    outer,
-    ra_dec_to_theta_phi,
-};
+use super::polarization::polarization_tensor;
+use super::util::{ra_dec_to_theta_phi, ThreeVector};
 
 const GEOCENTER: [f64; 3] = [0.0, 0.0, 0.0];
 
@@ -20,7 +17,7 @@ pub fn get_polarization_tensor(
     let result = std::panic::catch_unwind(
         || { 
             let pol = polarization_tensor(ra, dec, gps_time, psi, mode);
-            _wrap_2d_array_for_numpy(&pol)
+            pol.to_pyarray()
         }
     );
 
@@ -41,11 +38,11 @@ pub fn time_delay_geocentric(
     let theta = theta_phi.0;
     let phi = theta_phi.1;
 
-    (
-        (vertex_2[0] - vertex_1[0]) * theta.sin() * phi.cos()
-        + (vertex_2[1] - vertex_1[1]) * theta.sin() * phi.cos()
-        + (vertex_2[2] - vertex_1[2]) * theta.cos()
-    ) / SPEED_OF_LIGHT_IN_VACUUM
+    let vertex_1 = ThreeVector::from_array(&vertex_1);
+    let vertex_2 = ThreeVector::from_array(&vertex_2);
+    let vector = ThreeVector::from_spherical_angles(theta, phi);
+
+    (vertex_2 - vertex_1).dot(&vector) / SPEED_OF_LIGHT_IN_VACUUM
 }
 
 #[allow(dead_code)]
@@ -59,35 +56,19 @@ pub fn time_delay_from_geocenter(vertex: [f64; 3], ra: f64, dec: f64, gps_time: 
 pub fn calculate_arm(
     arm_tilt: f64, arm_azimuth: f64, longitude: f64, latitude: f64
 ) -> Py<PyArray1<f64>> {
-    let arm = [
-        - longitude.sin() * arm_tilt.cos() * arm_azimuth.cos()
-        - latitude.sin() * longitude.cos() * arm_tilt.cos() * arm_azimuth.sin()
-        + latitude.cos() * longitude.cos() * arm_tilt.sin(),
-        longitude.cos() * arm_tilt.cos() * arm_azimuth.cos()
-        - latitude.sin() * longitude.sin() * arm_tilt.cos() * arm_azimuth.sin()
-        + latitude.cos() * longitude.sin() * arm_tilt.sin(),
-        latitude.cos() * arm_tilt.cos() * arm_azimuth.sin()
-        + latitude.sin() * arm_tilt.sin(),
-    ];
-    Python::with_gil(|py| {
-        PyArray1::from_vec_bound(py, arm.to_vec()).unbind()
-    })
+    let output = ThreeVector::from_spherical_angles(-latitude, longitude) * arm_tilt.cos() * arm_azimuth.sin()
+        + ThreeVector::from_spherical_angles(FRAC_PI_2, FRAC_PI_2 + longitude) * arm_tilt.cos() * arm_azimuth.cos()
+        + ThreeVector::from_spherical_angles(FRAC_PI_2 - latitude, longitude) * arm_tilt.sin();
+    output.to_pyarray()
 }
 
 #[allow(dead_code)]
 #[pyfunction]
 pub fn detector_tensor(x: [f64; 3], y: [f64; 3]) -> Py<PyArray2<f64>> {
-    let mut output = add_three_by_three(
-        &outer(&x, &x),
-        &outer(&y, &y),
-        &std::ops::Sub::sub,
-    );
-    for row in output.iter_mut() {
-        for element in row.iter_mut() {
-            *element /= 2.0;
-        }
-    }
-    _wrap_2d_array_for_numpy(&output)
+    let x = ThreeVector::from_array(&x);
+    let y = ThreeVector::from_array(&y);
+
+    ((x.outer(&x) - y.outer(&y)) / 2.0).to_pyarray()
 }
 
 #[allow(dead_code)]
@@ -109,7 +90,7 @@ pub fn time_dependent_polarization_tensor(
     let mut output: Vec<Vec<Vec<f64>>> = Vec::new();
     for gps_time in gps_times {
         let pol = polarization_tensor(ra, dec, gps_time, psi, mode);
-        output.push(pol.iter().map(|row| row.to_vec()).collect());
+        output.push(pol.to_vec());
     }
     output
 }

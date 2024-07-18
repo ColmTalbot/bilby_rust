@@ -1,77 +1,63 @@
-use crate::geometry::util::{add_three_by_three, cross_product, outer, ra_dec_to_theta_phi};
+use::std::f64::consts::FRAC_PI_2;
 
-fn m_vector(theta: f64, phi: f64, psi: f64) -> [f64; 3] {
-    [
-        -theta.cos() * phi.cos() * psi.sin() + phi.sin() * psi.cos(),
-        -theta.cos() * phi.sin() * psi.sin() - phi.cos() * psi.cos(),
-        theta.sin() * psi.sin(),
-    ]
+use super::util::{ra_dec_to_theta_phi, ThreeMatrix, ThreeVector};
+
+fn m_vector(theta: f64, phi: f64, psi: f64) -> ThreeVector {
+    let vec1 = ThreeVector::from_spherical_angles(theta - FRAC_PI_2, phi) * psi.sin();
+    let vec2 = ThreeVector::from_spherical_angles(FRAC_PI_2, phi - FRAC_PI_2) * psi.cos();
+    vec1 + vec2
 }
 
-fn n_vector(theta: f64, phi: f64, psi: f64) -> [f64; 3] {
-    [
-        -theta.cos() * phi.cos() * psi.cos() - phi.sin() * psi.sin(),
-        -theta.cos() * phi.sin() * psi.cos() + phi.cos() * psi.sin(),
-        theta.sin() * psi.cos(),
-    ]
+fn n_vector(theta: f64, phi: f64, psi: f64) -> ThreeVector {
+    let vec1 = ThreeVector::from_spherical_angles(theta - FRAC_PI_2, phi) * psi.cos();
+    let vec2 = ThreeVector::from_spherical_angles(FRAC_PI_2, phi - FRAC_PI_2) * psi.sin();
+    vec1 - vec2
 }
 
-fn omega_vector(theta: f64, phi: f64, psi: f64) -> [f64; 3] {
-    cross_product(&m_vector(theta, phi, psi), &n_vector(theta, phi, psi)) 
+fn omega_vector(theta: f64, phi: f64, psi: f64) -> ThreeVector {
+    m_vector(theta, phi, psi).cross(&n_vector(theta, phi, psi))
 }
 
-pub fn symmetric_mode(input_1: &[f64; 3], input_2: &[f64; 3]) -> [[f64; 3]; 3] {
-    add_three_by_three(
-        &outer(input_1, input_2),
-        &outer(input_2, input_1),
-        &std::ops::Add::add,
-    )
+pub fn symmetric_mode(input_1: &ThreeVector, input_2: &ThreeVector) -> ThreeMatrix {
+    input_1.outer(&input_2) + input_2.outer(&input_1)
 }
 
-pub fn plus(theta: f64, phi: f64, psi: f64) -> [[f64; 3]; 3]{
+pub fn plus(theta: f64, phi: f64, psi: f64) -> ThreeMatrix {
     let m = m_vector(theta, phi, psi);
     let n = n_vector(theta, phi, psi);
-    add_three_by_three(
-        &outer(&m, &m),
-        &outer(&n, &n),
-        &std::ops::Sub::sub,
-    )
+    m.outer(&m) - n.outer(&n)
 }
 
-pub fn cross(theta: f64, phi: f64, psi: f64) -> [[f64; 3]; 3] {
+pub fn cross(theta: f64, phi: f64, psi: f64) -> ThreeMatrix {
     let m = m_vector(theta, phi, psi);
     let n = n_vector(theta, phi, psi);
     symmetric_mode(&m, &n)
 }
 
-pub fn breathing(theta: f64, phi: f64, psi: f64) -> [[f64; 3]; 3]{
+pub fn breathing(theta: f64, phi: f64, psi: f64) -> ThreeMatrix{
     let m = m_vector(theta, phi, psi);
     let n = n_vector(theta, phi, psi);
-    add_three_by_three(
-        &outer(&m, &m),
-        &outer(&n, &n),
-        &std::ops::Add::add,
-    )
+    m.outer(&m) + n.outer(&n)
 }
 
-pub fn longitudinal(theta: f64, phi: f64, psi: f64) -> [[f64; 3]; 3]{
+pub fn longitudinal(theta: f64, phi: f64, psi: f64) -> ThreeMatrix {
     let omega = omega_vector(theta, phi, psi);
-    outer(&omega, &omega)
+    omega.outer(&omega)
 }
 
-pub fn x(theta: f64, phi: f64, psi: f64) -> [[f64; 3]; 3] {
+pub fn x(theta: f64, phi: f64, psi: f64) -> ThreeMatrix {
     let m = m_vector(theta, phi, psi);
     let omega = omega_vector(theta, phi, psi);
     symmetric_mode(&m, &omega)
 }
 
-pub fn y(theta: f64, phi: f64, psi: f64) -> [[f64; 3]; 3] {
+pub fn y(theta: f64, phi: f64, psi: f64) -> ThreeMatrix {
     let n = n_vector(theta, phi, psi);
     let omega = omega_vector(theta, phi, psi);
     symmetric_mode(&n, &omega)
 }
 
-pub fn polarization_tensor(ra: f64, dec: f64, gps_time: f64, psi: f64, mode: &str) -> [[f64; 3]; 3] {
+pub fn polarization_tensor(ra: f64, dec: f64, gps_time: f64, psi: f64, mode: &str) -> ThreeMatrix {
     let theta_phi = ra_dec_to_theta_phi(ra, dec, gps_time);
     let theta = theta_phi.0;
     let phi = theta_phi.1;

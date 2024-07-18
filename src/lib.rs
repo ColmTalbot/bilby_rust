@@ -6,6 +6,7 @@ mod geometry;
 
 #[pymodule]
 fn bilby_rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add("__all__", ["time", "geometry"])?;
 
     let time_: Bound<PyModule> = PyModule::new_bound(m.py(), "time")?;
     // see https://github.com/PyO3/pyo3/issues/1517#issuecomment-808664021

@@ -1,98 +1,73 @@
+use std::f64::consts::{PI, FRAC_PI_2};
+
 use pyo3::{Py, pyfunction};
 use numpy::PyArray2;
 
-use crate::geometry::util;
+use super::util::{ThreeMatrix, ThreeVector};
 
-pub fn _rotation_matrix_from_vertices(vertex_1: &[f64; 3], vertex_2: &[f64; 3]) -> [[f64; 3]; 3] {
-    let delta_x = util::normalized(&[
-        vertex_1[0] - vertex_2[0],
-        vertex_1[1] - vertex_2[1],
-        vertex_1[2] - vertex_2[2],
-    ]);
-    let midpoint = util::normalized(&[
-        (vertex_1[0] + vertex_2[0]),
-        (vertex_1[1] + vertex_2[1]),
-        (vertex_1[2] + vertex_2[2]),
-    ]);
-    let x_axis = util::cross_product(&delta_x, &midpoint);
-    let y_axis = util::cross_product(&x_axis, &delta_x);
-    [x_axis, y_axis, delta_x]
-}
 
-pub fn _rotation_matrix_from_delta_x(delta_x: &[f64; 3]) -> [[f64; 3]; 3] {
-    let delta_x = util::normalized(delta_x);
-    
-    let beta = delta_x[2].acos();
-    let alpha = (-delta_x[1] * delta_x[2]).atan2(delta_x[0]);
-    let gamma = delta_x[1].atan2(delta_x[0]);
-
-    let cos_alpha = alpha.cos();
-    let sin_alpha = alpha.sin();
-    let cos_beta = beta.cos();
-    let sin_beta = beta.sin();
-    let cos_gamma = gamma.cos();
-    let sin_gamma = gamma.sin();
-
-    [
-        [
-            cos_alpha * cos_beta * cos_gamma - sin_alpha * sin_gamma,
-            -sin_alpha * cos_beta * cos_gamma - cos_alpha * sin_gamma,
-            sin_beta * cos_gamma,
-        ],
-        [
-            cos_alpha * cos_beta * sin_gamma + sin_alpha * cos_gamma,
-            -sin_alpha * cos_beta * sin_gamma + cos_alpha * cos_gamma,
-            sin_beta * sin_gamma,
-        ],
-        [
-            -cos_alpha * sin_beta,
-            sin_alpha * sin_beta,
-            cos_beta,
+pub fn _rotation_matrix_from_vertices(vertex_1: ThreeVector, vertex_2: ThreeVector) -> ThreeMatrix {
+    let delta_x = (vertex_1 - vertex_2).normalize();
+    let midpoint = (vertex_1 + vertex_2).normalize();
+    let x_axis = delta_x.cross(&midpoint);
+    let y_axis = x_axis.cross(&delta_x);
+    ThreeMatrix {
+        rows: [
+            x_axis,
+            y_axis,
+            delta_x,
         ]
-    ]
+    }
 }
 
-pub fn rotate_spherical_angles(zenith: f64, azimuth: f64, rotation: [[f64; 3]; 3]) -> (f64, f64) {
-    let cazimuth = azimuth.cos();
-    let sazimuth = azimuth.sin();
-    let czenith = zenith.cos();
-    let szenith = zenith.sin();
+pub fn _rotation_matrix_from_delta_x(delta_x: ThreeVector) -> ThreeMatrix {
+    let delta_x = delta_x.normalize();
+    
+    let beta = delta_x.z.acos();
+    let alpha = (-delta_x.y * delta_x.z).atan2(delta_x.x);
+    let gamma = delta_x.y.atan2(delta_x.x);
 
-    let theta = (
-        rotation[2][0] * szenith * cazimuth
-        + rotation[2][1]* szenith * sazimuth
-        + rotation[2][2] * czenith
-    ).acos();
-    let phi = (
-        rotation[1][0] * cazimuth * szenith
-        + rotation[1][1] * sazimuth * szenith
-        + rotation[1][2] * czenith
-    ).atan2(
-        rotation[0][0] * cazimuth * szenith
-        + rotation[0][1] * sazimuth * szenith
-        + rotation[0][2] * czenith
-    );
+    ThreeMatrix {
+        rows: [
+            ThreeVector::from_spherical_angles(FRAC_PI_2 - beta, -alpha) * gamma.cos()
+            - ThreeVector::from_spherical_angles(FRAC_PI_2, FRAC_PI_2 - alpha) * gamma.sin(),
+            ThreeVector::from_spherical_angles(FRAC_PI_2 - beta, -alpha) * gamma.sin()
+            + ThreeVector::from_spherical_angles(FRAC_PI_2, FRAC_PI_2 - alpha) * gamma.cos(),
+            ThreeVector::from_spherical_angles(beta, PI - alpha),
+        ]
+    }
+}
+
+pub fn rotate_spherical_angles(zenith: f64, azimuth: f64, rotation: ThreeMatrix) -> (f64, f64) {
+    let vector = ThreeVector::from_spherical_angles(zenith, azimuth);
+
+    let vector = rotation.dot(&vector);
+    let theta = vector.z.acos();
+    let phi = vector.y.atan2(vector.x);
     (theta, phi)
 }
 
 #[allow(dead_code)]
 #[pyfunction]
 pub fn rotation_matrix_from_vertices(vertex_1: [f64; 3], vertex_2: [f64; 3]) -> Py<PyArray2<f64>> {
-    let rotation = _rotation_matrix_from_vertices(&vertex_1, &vertex_2);
-    util::_wrap_2d_array_for_numpy(&rotation)
+    let rotation = _rotation_matrix_from_vertices(
+        ThreeVector::from_array(&vertex_1),
+        ThreeVector::from_array(&vertex_2),
+    );
+    rotation.to_pyarray()
 }
 
 #[allow(dead_code)]
 #[pyfunction]
 pub fn rotation_matrix_from_delta_x(delta_x: [f64; 3]) -> Py<PyArray2<f64>> {
-    let rotation = _rotation_matrix_from_delta_x(&delta_x);
-    util::_wrap_2d_array_for_numpy(&rotation)
+    let rotation = _rotation_matrix_from_delta_x(ThreeVector::from_array(&delta_x));
+    rotation.to_pyarray()
 }
 
 #[allow(dead_code)]
 #[pyfunction]
 pub fn zenith_azimuth_to_theta_phi(zenith: f64, azimuth: f64, delta_x: [f64; 3]) -> (f64, f64) {
-    let rotation = _rotation_matrix_from_delta_x(&delta_x);
+    let rotation = _rotation_matrix_from_delta_x(ThreeVector::from_array(&delta_x));
     rotate_spherical_angles(zenith, azimuth, rotation)
 }
 
@@ -101,6 +76,9 @@ pub fn zenith_azimuth_to_theta_phi(zenith: f64, azimuth: f64, delta_x: [f64; 3])
 pub fn zenith_azimuth_to_theta_phi_optimized(
     zenith: f64, azimuth: f64, vertex_1:[f64; 3], vertex_2: [f64; 3]
 ) -> (f64, f64) {
-    let rotation = _rotation_matrix_from_vertices(&vertex_1, &vertex_2);
+    let rotation = _rotation_matrix_from_vertices(
+        ThreeVector::from_array(&vertex_1),
+        ThreeVector::from_array(&vertex_2),
+    );
     rotate_spherical_angles(zenith, azimuth, rotation)
 }
