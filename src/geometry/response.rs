@@ -1,23 +1,20 @@
 use std::f64::consts::PI;
 
-use pyo3::{pyfunction, Py, Python};
-use numpy::{Complex64, PyArray1, PyArray2, PyArray3};
 use num_complex::Complex;
+use numpy::{Complex64, PyArray1, PyArray2, PyArray3};
+use pyo3::{pyfunction, Py, Python};
 
 use super::{
-    ra_dec_to_theta_phi,
     polarization::polarization_tensor,
-    util::{ComplexThreeMatrix, SphericalAngles, ThreeMatrix, ThreeVector}
+    ra_dec_to_theta_phi,
+    util::{ComplexThreeMatrix, SphericalAngles, ThreeMatrix, ThreeVector},
 };
 
-fn projection(
-    frequency: &f64, cos_angle: f64, free_spectral_range: f64
-) -> Complex<f64> {
+fn projection(frequency: &f64, cos_angle: f64, free_spectral_range: f64) -> Complex<f64> {
     let omega = Complex::I * PI * frequency / free_spectral_range;
-    1.0 / (4.0 * omega) * (
-        (1.0 - (-(1.0 - cos_angle) * omega).exp()) / (1.0 - cos_angle)
-        - (-2.0 * omega).exp() * (1.0 - ((1.0 + cos_angle) * omega).exp()) / (1.0 + cos_angle)
-    )
+    1.0 / (4.0 * omega)
+        * ((1.0 - (-(1.0 - cos_angle) * omega).exp()) / (1.0 - cos_angle)
+            - (-2.0 * omega).exp() * (1.0 - ((1.0 + cos_angle) * omega).exp()) / (1.0 + cos_angle))
 }
 
 #[allow(dead_code)]
@@ -31,24 +28,30 @@ pub fn frequency_dependent_detector_tensor(
     gps_times: Vec<f64>,
     free_spectral_range: f64,
 ) -> Py<PyArray3<Complex64>> {
-
     let x: ThreeVector = x.into();
     let y: ThreeVector = y.into();
-    let x_tensor = x.outer(&x);
-    let y_tensor = y.outer(&y);
+    let x_tensor = x.outer(x);
+    let y_tensor = y.outer(y);
 
     let mut output: Vec<Vec<Vec<Complex<f64>>>> = Vec::new();
     for (frequency, gps_time) in frequencies.iter().zip(gps_times.iter()) {
         let temp: ComplexThreeMatrix = _single_finite_size_detector_tensor(
-            frequency, gps_time, &x, &y, &x_tensor, &y_tensor, ra, dec, free_spectral_range
+            frequency,
+            gps_time,
+            &x,
+            &y,
+            &x_tensor,
+            &y_tensor,
+            ra,
+            dec,
+            free_spectral_range,
         );
         output.push(temp.to_vec());
     }
-    Python::with_gil(|py| {
-        PyArray3::from_vec3_bound(py, &output).unwrap().unbind()
-    })
+    Python::with_gil(|py| PyArray3::from_vec3_bound(py, &output).unwrap().unbind())
 }
 
+#[allow(clippy::too_many_arguments)]
 fn _single_finite_size_detector_tensor(
     frequency: &f64,
     gps_time: &f64,
@@ -61,8 +64,8 @@ fn _single_finite_size_detector_tensor(
     free_spectral_range: f64,
 ) -> ComplexThreeMatrix {
     let line_of_sight = line_of_sight(ra, dec, *gps_time);
-    let cos_xangle = x.dot(&line_of_sight);
-    let cos_yangle = y.dot(&line_of_sight);
+    let cos_xangle = x.dot(line_of_sight);
+    let cos_yangle = y.dot(line_of_sight);
     let delta_x = projection(frequency, cos_xangle, free_spectral_range);
     let delta_y = projection(frequency, cos_yangle, free_spectral_range);
 
@@ -74,7 +77,7 @@ fn line_of_sight(ra: f64, dec: f64, gps_time: f64) -> ThreeVector {
     theta_phi.into()
 }
 
-#[allow(dead_code)]
+#[allow(clippy::too_many_arguments, dead_code)]
 #[pyfunction]
 pub fn antenna_response(
     x: [f64; 3],
@@ -89,8 +92,8 @@ pub fn antenna_response(
 ) -> Py<PyArray1<Complex<f64>>> {
     let x: ThreeVector = x.into();
     let y: ThreeVector = y.into();
-    let x_tensor = x.outer(&x);
-    let y_tensor = y.outer(&y);
+    let x_tensor = x.outer(x);
+    let y_tensor = y.outer(y);
 
     let mut output: Vec<Complex<f64>> = Vec::new();
 
@@ -98,7 +101,15 @@ pub fn antenna_response(
         let pol: ThreeMatrix = polarization_tensor(ra, dec, *gps_time, psi, mode);
 
         let det: ComplexThreeMatrix = _single_finite_size_detector_tensor(
-            frequency, gps_time, &x, &y, &x_tensor, &y_tensor, ra, dec, free_spectral_range
+            frequency,
+            gps_time,
+            &x,
+            &y,
+            &x_tensor,
+            &y_tensor,
+            ra,
+            dec,
+            free_spectral_range,
         );
 
         let mut temp: Complex<f64> = Complex::new(0.0, 0.0);
@@ -109,10 +120,10 @@ pub fn antenna_response(
         }
         output.push(temp);
     }
-    Python::with_gil(|py| {PyArray1::from_vec_bound(py, output).unbind()})
+    Python::with_gil(|py| PyArray1::from_vec_bound(py, output).unbind())
 }
 
-#[allow(dead_code)]
+#[allow(clippy::too_many_arguments, dead_code)]
 #[pyfunction]
 pub fn antenna_response_tensor_modes(
     x: [f64; 3],
@@ -126,8 +137,8 @@ pub fn antenna_response_tensor_modes(
 ) -> Py<PyArray2<Complex<f64>>> {
     let x: ThreeVector = x.into();
     let y: ThreeVector = y.into();
-    let x_tensor = x.outer(&x);
-    let y_tensor = y.outer(&y);
+    let x_tensor = x.outer(x);
+    let y_tensor = y.outer(y);
 
     let mut output: Vec<Vec<Complex<f64>>> = Vec::new();
 
@@ -138,7 +149,15 @@ pub fn antenna_response_tensor_modes(
         ];
 
         let det: ComplexThreeMatrix = _single_finite_size_detector_tensor(
-            frequency, gps_time, &x, &y, &x_tensor, &y_tensor, ra, dec, free_spectral_range
+            frequency,
+            gps_time,
+            &x,
+            &y,
+            &x_tensor,
+            &y_tensor,
+            ra,
+            dec,
+            free_spectral_range,
         );
 
         let mut temp: [Complex<f64>; 2] = [Complex::new(0.0, 0.0); 2];
@@ -147,12 +166,10 @@ pub fn antenna_response_tensor_modes(
         }
         output.push(temp.to_vec());
     }
-    Python::with_gil(|py| {
-        PyArray2::from_vec2_bound(py, &output).unwrap().unbind()
-    })
+    Python::with_gil(|py| PyArray2::from_vec2_bound(py, &output).unwrap().unbind())
 }
 
-#[allow(dead_code)]
+#[allow(clippy::too_many_arguments, dead_code)]
 #[pyfunction]
 pub fn antenna_response_all_modes(
     x: [f64; 3],
@@ -166,8 +183,8 @@ pub fn antenna_response_all_modes(
 ) -> Py<PyArray2<Complex<f64>>> {
     let x: ThreeVector = x.into();
     let y: ThreeVector = y.into();
-    let x_tensor = x.outer(&x);
-    let y_tensor = y.outer(&y);
+    let x_tensor = x.outer(x);
+    let y_tensor = y.outer(y);
 
     let mut output: Vec<Vec<Complex<f64>>> = Vec::new();
 
@@ -182,7 +199,15 @@ pub fn antenna_response_all_modes(
         ];
 
         let det: ComplexThreeMatrix = _single_finite_size_detector_tensor(
-            frequency, gps_time, &x, &y, &x_tensor, &y_tensor, ra, dec, free_spectral_range
+            frequency,
+            gps_time,
+            &x,
+            &y,
+            &x_tensor,
+            &y_tensor,
+            ra,
+            dec,
+            free_spectral_range,
         );
 
         let mut temp: [Complex<f64>; 6] = [Complex::new(0.0, 0.0); 6];
@@ -191,7 +216,5 @@ pub fn antenna_response_all_modes(
         }
         output.push(temp.to_vec());
     }
-    Python::with_gil(|py| {
-        PyArray2::from_vec2_bound(py, &output).unwrap().unbind()
-    })
+    Python::with_gil(|py| PyArray2::from_vec2_bound(py, &output).unwrap().unbind())
 }
