@@ -16,6 +16,13 @@ This will install an unoptimized version, if you want to test benchmarking, be s
 $ maturin develop --release
 ```
 
+On MacOS, you may need to install additional dependencies:
+
+```bash
+rustup target add x86_64-apple-darwin
+mamba install -c conda-forge clang
+```
+
 The python code can then be used directly in python
 
 ```python
