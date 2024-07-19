@@ -1,0 +1,49 @@
+name: Pytest
+
+on:
+    push:
+      branches: [ "main" ]
+    pull_request:
+      branches: [ "main" ]
+  
+env:
+  CARGO_TERM_COLOR: always
+
+
+jobs:
+  test-python-bindings:
+    runs-on: ubuntu-latest
+    strategy:
+        fail-fast: false
+        matrix:
+          python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    - uses: mamba-org/setup-micromamba@v1
+      with:
+        micromamba-version: '1.5.6-0' # any version from https://github.com/mamba-org/micromamba-releases
+        environment-name: test-env
+        create-args: >-
+          python=${{ matrix.python-version }}
+          maturin
+          numpy
+          bilby
+          bilby.cython
+          pytest
+    - name: Install package
+      run: |
+        maturin develop --release --verbose 
+      shell: bash -el {0}
+    - name: Test with pytest
+      run: |
+        pytest . -v --durations=0
+      shell: bash -el {0}
+    - name: Test profile script
+      run: |
+        python examples/profile.py
+      shell: bash -el {0}
