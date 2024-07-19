@@ -213,6 +213,28 @@ impl ThreeMatrix {
         self.rows.iter()
     }
 
+    pub fn from_columns(columns: [ThreeVector; 3]) -> Self {
+        Self {
+            rows: [
+                ThreeVector {
+                    x: columns[0].x,
+                    y: columns[1].x,
+                    z: columns[2].x,
+                },
+                ThreeVector {
+                    x: columns[0].y,
+                    y: columns[1].y,
+                    z: columns[2].y,
+                },
+                ThreeVector {
+                    x: columns[0].z,
+                    y: columns[1].z,
+                    z: columns[2].z,
+                },
+            ],
+        }
+    }
+
     pub fn dot(self, other: ThreeVector) -> ThreeVector {
         ThreeVector {
             x: self.rows[0].dot(other),
@@ -222,25 +244,7 @@ impl ThreeMatrix {
     }
 
     pub fn transpose(self) -> Self {
-        ThreeMatrix {
-            rows: [
-                ThreeVector {
-                    x: self.rows[0].x,
-                    y: self.rows[1].x,
-                    z: self.rows[2].x,
-                },
-                ThreeVector {
-                    x: self.rows[0].y,
-                    y: self.rows[1].y,
-                    z: self.rows[2].y,
-                },
-                ThreeVector {
-                    x: self.rows[0].z,
-                    y: self.rows[1].z,
-                    z: self.rows[2].z,
-                },
-            ],
-        }
+        Self::from_columns(self.rows)
     }
 
     pub fn rotate_x(self, angle: f64) -> ThreeMatrix {

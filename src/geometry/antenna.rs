@@ -142,12 +142,9 @@ pub fn calculate_arm(
         azimuth: FRAC_PI_2 - arm_azimuth,
     }
     .into();
-    ThreeMatrix {
-        rows: [vec1, vec2, vec3],
-    }
-    .transpose()
-    .dot(arm_vector)
-    .into()
+    ThreeMatrix::from_columns([vec1, vec2, vec3])
+        .dot(arm_vector)
+        .into()
 }
 
 #[allow(dead_code)]
@@ -181,9 +178,9 @@ pub fn time_dependent_polarization_tensor(
     psi: f64,
     mode: &str,
 ) -> Py<PyArray3<f64>> {
-    let mut output: Vec<Vec<Vec<f64>>> = Vec::new();
-    for gps_time in gps_times {
-        output.push(polarization_tensor(ra, dec, gps_time, psi, mode).into());
-    }
+    let output: Vec<Vec<Vec<f64>>> = gps_times
+        .iter()
+        .map(|&gps_time| polarization_tensor(ra, dec, gps_time, psi, mode).into())
+        .collect();
     Python::with_gil(|py| PyArray3::from_vec3_bound(py, &output).unwrap().unbind())
 }
