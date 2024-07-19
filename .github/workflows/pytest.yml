@@ -35,12 +35,16 @@ jobs:
     - name: Install package
       run: |
         maturin develop --release --verbose 
+      shell: bash -el {0}
     - name: List installed conda packages
       run: |
         mamba list
+      shell: bash -el {0}
     - name: Test with pytest
       run: |
         pytest . -v --durations=0
+      shell: bash -el {0}
     - name: Test profile script
       run: |
-        pthon examples/profile.py
+        python examples/profile.py
+      shell: bash -el {0}
