@@ -4,7 +4,8 @@ use pyo3::{pyfunction, Py, Python};
 
 use super::{
     antenna::DetectorGeometry,
-    polarization::{polarization_tensor, ALL_MODES, TENSOR_MODES},
+    polarization::{PolarizationMatrix, ALL_MODES, TENSOR_MODES},
+    util::ra_dec_to_theta_phi,
 };
 
 #[allow(dead_code)]
@@ -50,9 +51,9 @@ pub fn antenna_response(
         .iter()
         .zip(gps_time.iter())
         .map(|(&frequency, &gps_time)| {
-            (det.finite_size_tensor(frequency, gps_time, ra, dec)
-                * polarization_tensor(ra, dec, gps_time, psi, mode))
-            .sum()
+            let (theta, phi) = ra_dec_to_theta_phi(ra, dec, gps_time);
+            let pol: PolarizationMatrix = PolarizationMatrix::new(theta, phi, psi);
+            (det.finite_size_tensor(frequency, gps_time, ra, dec) * pol.mode(mode)).sum()
         })
         .collect();
     Python::with_gil(|py| PyArray1::from_vec_bound(py, output).unbind())
@@ -127,10 +128,14 @@ pub fn antenna_response_multiple_modes(
         .iter()
         .zip(gps_time.iter())
         .map(|(&frequency, &gps_time)| {
+            let (theta, phi) = ra_dec_to_theta_phi(ra, dec, gps_time);
+            let pol: PolarizationMatrix = PolarizationMatrix::new(theta, phi, psi);
+
             let det_tensor = det.finite_size_tensor(frequency, gps_time, ra, dec);
             modes
                 .iter()
-                .map(|mode| (det_tensor * polarization_tensor(ra, dec, gps_time, psi, mode)).sum())
+                .map(|mode| (det_tensor * pol.mode(mode)).sum()
+            )
                 .collect()
         })
         .collect();
