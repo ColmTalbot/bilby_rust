@@ -2,10 +2,10 @@ use num_complex::Complex;
 use numpy::{Complex64, PyArray1, PyArray2, PyArray3};
 use pyo3::{pyfunction, Py, Python};
 
-use super::{antenna::DetectorGeometry, polarization::polarization_tensor};
-
-static TENSOR_MODES: [&str; 2] = ["plus", "cross"];
-static ALL_MODES: [&str; 6] = ["plus", "cross", "breathing", "longitudinal", "x", "y"];
+use super::{
+    antenna::DetectorGeometry,
+    polarization::{polarization_tensor, ALL_MODES, TENSOR_MODES},
+};
 
 #[allow(dead_code)]
 #[pyfunction]

@@ -5,6 +5,9 @@ use super::{
     util::ra_dec_to_theta_phi,
 };
 
+pub static TENSOR_MODES: [&str; 2] = ["plus", "cross"];
+pub static ALL_MODES: [&str; 6] = ["plus", "cross", "breathing", "longitudinal", "x", "y"];
+
 fn m_vector(theta: f64, phi: f64, psi: f64) -> ThreeVector {
     let vec1: ThreeVector = SphericalAngles {
         zenith: theta - FRAC_PI_2,
