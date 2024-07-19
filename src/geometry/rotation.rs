@@ -3,7 +3,7 @@ use std::f64::consts::{FRAC_PI_2, PI};
 use numpy::PyArray2;
 use pyo3::{pyfunction, Py};
 
-use super::util::{SphericalAngles, ThreeMatrix, ThreeVector};
+use super::three::{SphericalAngles, ThreeMatrix, ThreeVector};
 
 pub fn _rotation_matrix_from_vertices(vertex_1: ThreeVector, vertex_2: ThreeVector) -> ThreeMatrix {
     let delta_x = (vertex_1 - vertex_2).normalize();
@@ -39,12 +39,9 @@ pub fn _rotation_matrix_from_delta_x(delta_x: ThreeVector) -> ThreeMatrix {
     .into();
 
     ThreeMatrix {
-        rows: [
-            angles1 * gamma.cos() - angles2 * gamma.sin(),
-            angles1 * gamma.sin() + angles2 * gamma.cos(),
-            angles3,
-        ],
+        rows: [angles1, angles2, angles3],
     }
+    .rotate_z(gamma)
 }
 
 pub fn rotate_spherical_angles(zenith: f64, azimuth: f64, rotation: ThreeMatrix) -> (f64, f64) {

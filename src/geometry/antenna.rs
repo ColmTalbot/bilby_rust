@@ -1,14 +1,62 @@
-use std::f64::consts::FRAC_PI_2;
+use std::f64::consts::{FRAC_PI_2, PI};
 
-use numpy::{PyArray1, PyArray2};
+use num_complex::Complex;
+use numpy::{PyArray1, PyArray2, PyArray3};
 use physical_constants::SPEED_OF_LIGHT_IN_VACUUM;
 use pyo3::{exceptions::PyValueError, pyfunction, Py, PyErr, PyResult, Python};
 
 use super::{
     polarization::polarization_tensor,
-    ra_dec_to_theta_phi,
-    util::{SphericalAngles, ThreeVector},
+    three::{ComplexThreeMatrix, SphericalAngles, ThreeMatrix, ThreeVector},
+    util::{line_of_sight, ra_dec_to_theta_phi},
 };
+
+pub struct DetectorGeometry {
+    x: ThreeVector,
+    y: ThreeVector,
+    free_spectral_range: f64,
+    x_tensor: ThreeMatrix,
+    y_tensor: ThreeMatrix,
+    detector_tensor: ThreeMatrix,
+}
+
+impl DetectorGeometry {
+    pub fn new(x: ThreeVector, y: ThreeVector, free_spectral_range: f64) -> Self {
+        let x_tensor = x.outer(x);
+        let y_tensor = y.outer(y);
+        Self {
+            x,
+            y,
+            free_spectral_range,
+            x_tensor,
+            y_tensor,
+            detector_tensor: (x_tensor - y_tensor) / 2.0,
+        }
+    }
+
+    pub fn finite_size_tensor(
+        &self,
+        frequency: f64,
+        gps_time: f64,
+        ra: f64,
+        dec: f64,
+    ) -> ComplexThreeMatrix {
+        let line_of_sight = line_of_sight(ra, dec, gps_time);
+        let cos_xangle = self.x.dot(line_of_sight);
+        let cos_yangle = self.y.dot(line_of_sight);
+        let delta_x = projection(frequency, cos_xangle, self.free_spectral_range);
+        let delta_y = projection(frequency, cos_yangle, self.free_spectral_range);
+
+        self.x_tensor * delta_x - self.y_tensor * delta_y
+    }
+}
+
+fn projection(frequency: f64, cos_angle: f64, free_spectral_range: f64) -> Complex<f64> {
+    let omega = Complex::I * PI * frequency / free_spectral_range;
+    1.0 / (4.0 * omega)
+        * ((1.0 - (-(1.0 - cos_angle) * omega).exp()) / (1.0 - cos_angle)
+            - (-2.0 * omega).exp() * (1.0 - ((1.0 + cos_angle) * omega).exp()) / (1.0 + cos_angle))
+}
 
 const GEOCENTER: ThreeVector = ThreeVector {
     x: 0.0,
@@ -89,19 +137,24 @@ pub fn calculate_arm(
         azimuth: longitude,
     }
     .into();
-    (vec1 * arm_tilt.cos() * arm_azimuth.sin()
-        + vec2 * arm_tilt.cos() * arm_azimuth.cos()
-        + vec3 * arm_tilt.sin())
+    let arm_vector: ThreeVector = SphericalAngles {
+        zenith: FRAC_PI_2 - arm_tilt,
+        azimuth: FRAC_PI_2 - arm_azimuth,
+    }
+    .into();
+    ThreeMatrix {
+        rows: [vec1, vec2, vec3],
+    }
+    .transpose()
+    .dot(arm_vector)
     .into()
 }
 
 #[allow(dead_code)]
 #[pyfunction]
 pub fn detector_tensor(x: [f64; 3], y: [f64; 3]) -> Py<PyArray2<f64>> {
-    let x: ThreeVector = x.into();
-    let y: ThreeVector = y.into();
-
-    ((x.outer(x) - y.outer(y)) / 2.0).into()
+    let det = DetectorGeometry::new(x.into(), y.into(), 1.0);
+    det.detector_tensor.into()
 }
 
 #[allow(dead_code)]
@@ -127,11 +180,10 @@ pub fn time_dependent_polarization_tensor(
     gps_times: Vec<f64>,
     psi: f64,
     mode: &str,
-) -> Vec<Vec<Vec<f64>>> {
+) -> Py<PyArray3<f64>> {
     let mut output: Vec<Vec<Vec<f64>>> = Vec::new();
     for gps_time in gps_times {
-        let pol = polarization_tensor(ra, dec, gps_time, psi, mode);
-        output.push(pol.into());
+        output.push(polarization_tensor(ra, dec, gps_time, psi, mode).into());
     }
-    output
+    Python::with_gil(|py| PyArray3::from_vec3_bound(py, &output).unwrap().unbind())
 }

@@ -1,22 +1,10 @@
-use std::f64::consts::PI;
-
-use pyo3::pyfunction;
-
 use super::time;
 mod antenna;
 mod polarization;
 mod response;
 mod rotation;
+mod three;
 mod util;
-
-#[allow(dead_code)]
-#[pyfunction]
-pub fn ra_dec_to_theta_phi(ra: f64, dec: f64, gps_time: f64) -> (f64, f64) {
-    let gmst = time::greenwich_mean_sidereal_time(gps_time) % (2.0 * PI);
-    let theta = PI / 2.0 - dec;
-    let phi = ra - gmst;
-    (theta, phi)
-}
 
 #[allow(unused_imports)]
 pub use crate::geometry::antenna::{
@@ -34,3 +22,5 @@ pub use crate::geometry::rotation::{
     rotation_matrix_from_delta_x, rotation_matrix_from_vertices, zenith_azimuth_to_theta_phi,
     zenith_azimuth_to_theta_phi_optimized,
 };
+#[allow(unused_imports)]
+pub use crate::geometry::util::ra_dec_to_theta_phi;

@@ -1,8 +1,8 @@
 use std::f64::consts::FRAC_PI_2;
 
 use super::{
-    ra_dec_to_theta_phi,
-    util::{SphericalAngles, ThreeMatrix, ThreeVector},
+    three::{SphericalAngles, ThreeMatrix, ThreeVector},
+    util::ra_dec_to_theta_phi,
 };
 
 fn m_vector(theta: f64, phi: f64, psi: f64) -> ThreeVector {
