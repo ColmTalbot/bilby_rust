@@ -123,16 +123,16 @@ pub fn antenna_response_multiple_modes(
 ) -> Py<PyArray2<Complex64>> {
     let det: DetectorGeometry = DetectorGeometry::new(x.into(), y.into(), free_spectral_range);
 
-    let mut output: Vec<Vec<Complex<f64>>> = Vec::new();
-
-    for (&frequency, &gps_time) in frequency.iter().zip(gps_time.iter()) {
-        let det_tensor = det.finite_size_tensor(frequency, gps_time, ra, dec);
-        output.push(
+    let output: Vec<Vec<Complex<f64>>> = frequency
+        .iter()
+        .zip(gps_time.iter())
+        .map(|(&frequency, &gps_time)| {
+            let det_tensor = det.finite_size_tensor(frequency, gps_time, ra, dec);
             modes
                 .iter()
                 .map(|mode| (det_tensor * polarization_tensor(ra, dec, gps_time, psi, &mode)).sum())
-                .collect(),
-        );
-    }
+                .collect()
+        })
+        .collect();
     Python::with_gil(|py| PyArray2::from_vec2_bound(py, &output).unwrap().unbind())
 }
