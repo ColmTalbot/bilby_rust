@@ -14,8 +14,8 @@ pub use crate::geometry::antenna::{
 };
 #[allow(unused_imports)]
 pub use crate::geometry::response::{
-    antenna_response, antenna_response_all_modes, antenna_response_tensor_modes,
-    frequency_dependent_detector_tensor,
+    antenna_response, antenna_response_all_modes, antenna_response_multiple_modes,
+    antenna_response_tensor_modes, frequency_dependent_detector_tensor,
 };
 #[allow(unused_imports)]
 pub use crate::geometry::rotation::{

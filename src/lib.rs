@@ -5,10 +5,11 @@ mod geometry;
 mod time;
 
 use geometry::{
-    antenna_response, antenna_response_all_modes, antenna_response_tensor_modes, calculate_arm,
-    detector_tensor, frequency_dependent_detector_tensor, get_polarization_tensor,
-    ra_dec_to_theta_phi, rotation_matrix_from_delta_x, rotation_matrix_from_vertices,
-    time_delay_from_geocenter, time_delay_from_geocenter_vectorized, time_delay_geocentric,
+    antenna_response, antenna_response_all_modes, antenna_response_multiple_modes,
+    antenna_response_tensor_modes, calculate_arm, detector_tensor,
+    frequency_dependent_detector_tensor, get_polarization_tensor, ra_dec_to_theta_phi,
+    rotation_matrix_from_delta_x, rotation_matrix_from_vertices, time_delay_from_geocenter,
+    time_delay_from_geocenter_vectorized, time_delay_geocentric,
     time_dependent_polarization_tensor, zenith_azimuth_to_theta_phi,
     zenith_azimuth_to_theta_phi_optimized,
 };
@@ -47,6 +48,7 @@ fn bilby_rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     );
     g_.add_function(wrap_pyfunction!(antenna_response, &g_)?)?;
     g_.add_function(wrap_pyfunction!(antenna_response_all_modes, &g_)?)?;
+    g_.add_function(wrap_pyfunction!(antenna_response_multiple_modes, &g_)?)?;
     g_.add_function(wrap_pyfunction!(antenna_response_tensor_modes, &g_)?)?;
     g_.add_function(wrap_pyfunction!(calculate_arm, &g_)?)?;
     g_.add_function(wrap_pyfunction!(detector_tensor, &g_)?)?;
