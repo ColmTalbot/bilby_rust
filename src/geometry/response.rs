@@ -130,7 +130,7 @@ pub fn antenna_response_multiple_modes(
             let det_tensor = det.finite_size_tensor(frequency, gps_time, ra, dec);
             modes
                 .iter()
-                .map(|mode| (det_tensor * polarization_tensor(ra, dec, gps_time, psi, &mode)).sum())
+                .map(|mode| (det_tensor * polarization_tensor(ra, dec, gps_time, psi, mode)).sum())
                 .collect()
         })
         .collect();
