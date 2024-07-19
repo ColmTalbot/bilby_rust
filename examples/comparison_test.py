@@ -27,9 +27,14 @@ def test_get_polarization_tensor():
 
 
 def test_rotation_matrix_from_delta():
+    """
+    One of the elements is zero and so we need to set the absolute tolerance
+    as differences are in units of machine precision.
+    """
     np.testing.assert_allclose(
         cg.rotation_matrix_from_delta(np.array([1.0, 2.0, 3.0])),
         rg.rotation_matrix_from_delta_x(np.array([1.0, 2.0, 3.0])),
+        atol=1e-14,
     )
 
 
