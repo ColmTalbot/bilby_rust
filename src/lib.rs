@@ -1,18 +1,30 @@
+/// # bilby_rust
+///
+/// `bilby_rust` provides implementations of gravitational-wave detector geometry.
+///
+/// This is primarily intended to be used as a dependency for the `bilby` gravitational-wave
+/// parameter estimation package. However, it can also be used as a standalone package for
+/// computing detector responses and antenna patterns.
 use pyo3::types::PyModule;
 use pyo3::{py_run, pymodule, wrap_pyfunction, Bound, PyResult};
 
-mod geometry;
-mod time;
+pub mod geometry;
+pub mod time;
 
-use geometry::{
-    antenna_response, antenna_response_all_modes, antenna_response_multiple_modes,
-    antenna_response_tensor_modes, calculate_arm, detector_tensor,
-    frequency_dependent_detector_tensor, get_polarization_tensor, ra_dec_to_theta_phi,
-    rotation_matrix_from_delta_x, rotation_matrix_from_vertices, time_delay_from_geocenter,
+use geometry::antenna::{
+    calculate_arm, detector_tensor, get_polarization_tensor, time_delay_from_geocenter,
     time_delay_from_geocenter_vectorized, time_delay_geocentric,
-    time_dependent_polarization_tensor, zenith_azimuth_to_theta_phi,
+    time_dependent_polarization_tensor,
+};
+use geometry::response::{
+    antenna_response, antenna_response_all_modes, antenna_response_multiple_modes,
+    antenna_response_tensor_modes, frequency_dependent_detector_tensor,
+};
+use geometry::rotation::{
+    rotation_matrix_from_delta_x, rotation_matrix_from_vertices, zenith_azimuth_to_theta_phi,
     zenith_azimuth_to_theta_phi_optimized,
 };
+use geometry::util::ra_dec_to_theta_phi;
 use time::{
     greenwich_mean_sidereal_time, greenwich_mean_sidereal_time_vectorized, greenwich_sidereal_time,
     n_leap_seconds, utc_to_julian_day,

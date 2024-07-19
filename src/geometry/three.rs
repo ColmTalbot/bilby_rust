@@ -1,9 +1,15 @@
-use std::ops::{Add, Div, Mul, Sub};
+use std::ops::{Add, Div, Mul, Neg, Sub};
 
 use num_complex::Complex;
 use numpy::{PyArray1, PyArray2};
 use pyo3::{Py, Python};
 
+/// Container for spherical angles
+///
+/// # Fields
+///
+/// * `zenith`: Zenith angle in radians
+/// * `azimuth`: Azimuth angle in radians
 pub struct SphericalAngles {
     pub zenith: f64,
     pub azimuth: f64,
@@ -28,6 +34,15 @@ impl From<(f64, f64)> for SphericalAngles {
     }
 }
 
+/// Container for a three-dimensional vector of floats, to avoid
+/// having to dynamically allocate memory for a `Vec<f64>` or
+/// `Array1<f64>`
+///
+/// # Fields
+///
+/// * `x`: x-component of the vector
+/// * `y`: y-component of the vector
+/// * `z`: z-component of the vector
 #[derive(Debug, Clone, Copy)]
 pub struct ThreeVector {
     pub x: f64,
@@ -35,6 +50,16 @@ pub struct ThreeVector {
     pub z: f64,
 }
 
+/// Container for a three-dimensional vector of complex numbers, to avoid
+/// having to dynamically allocate memory for a `Vec<Complex<f64>>` or
+/// `Array1<Complex<f64>>`
+///
+///
+/// # Fields
+///
+/// * `x`: x-component of the vector
+/// * `y`: y-component of the vector
+/// * `z`: z-component of the vector
 #[derive(Debug, Clone, Copy)]
 pub struct ComplexThreeVector {
     pub x: Complex<f64>,
@@ -42,21 +67,49 @@ pub struct ComplexThreeVector {
     pub z: Complex<f64>,
 }
 
+/// Container for a three-by-three matrix of floats, to avoid
+/// having to dynamically allocate memory for a `Vec<Vec<f64>>` or
+/// `Array2<f64>`
+///
+/// # Fields
+///
+/// * `rows`: Array of three `ThreeVector` structs
 #[derive(Debug, Clone, Copy)]
 pub struct ThreeMatrix {
     pub rows: [ThreeVector; 3],
 }
 
+/// Container for a three-by-three matrix of complex numbers, to avoid
+/// having to dynamically allocate memory for a `Vec<Vec<Complex<f64>>>` or
+/// `Array2<Complex<f64>>`
+///
+/// # Fields
+///
+/// * `rows`: Array of three `ComplexThreeVector` structs
 #[derive(Debug, Clone, Copy)]
 pub struct ComplexThreeMatrix {
     pub rows: [ComplexThreeVector; 3],
 }
 
 impl ThreeVector {
+    /// Calculate the dot product of two vectors
+    ///
+    /// # Arguments
+    ///
+    /// * `other`: The other vector
+    ///
+    /// # Returns
+    ///
+    /// The dot product of the two vectors
     pub fn dot(self, other: Self) -> f64 {
         self.x * other.x + self.y * other.y + self.z * other.z
     }
 
+    /// Calculate the L2-norm of the vector
+    ///
+    /// # Returns
+    ///
+    /// The L2-norm of the vector
     pub fn normalize(self) -> Self {
         let norm = self.norm();
         Self {
@@ -70,6 +123,15 @@ impl ThreeVector {
         (self.x.powi(2) + self.y.powi(2) + self.z.powi(2)).sqrt()
     }
 
+    /// Compute the cross product of two vectors
+    ///
+    /// # Arguments
+    ///
+    /// * `other`: The other vector
+    ///
+    /// # Returns
+    ///
+    /// The cross product of the two vectors
     pub fn cross(self, other: Self) -> Self {
         Self {
             x: self.y * other.z - self.z * other.y,
@@ -78,6 +140,15 @@ impl ThreeVector {
         }
     }
 
+    /// Compute the element-wise outer product of two vectors
+    ///
+    /// # Arguments
+    ///
+    /// * `other`: The other vector
+    ///
+    /// # Returns
+    ///
+    /// The element-wise outer product of the two vectors
     pub fn outer(self, other: Self) -> ThreeMatrix {
         ThreeMatrix {
             rows: [
@@ -130,6 +201,7 @@ impl From<ThreeVector> for Py<PyArray1<f64>> {
     }
 }
 
+/// Add two vectors element-wise
 impl Add for ThreeVector {
     type Output = Self;
 
@@ -142,6 +214,7 @@ impl Add for ThreeVector {
     }
 }
 
+/// Subtract two vectors element-wise
 impl Sub for ThreeVector {
     type Output = Self;
 
@@ -154,6 +227,7 @@ impl Sub for ThreeVector {
     }
 }
 
+/// Multiply by a scalar element-wise
 impl Mul<f64> for ThreeVector {
     type Output = Self;
 
@@ -166,6 +240,7 @@ impl Mul<f64> for ThreeVector {
     }
 }
 
+/// Divide by a scalar element-wise
 impl Div<f64> for ThreeVector {
     type Output = Self;
 
@@ -178,6 +253,19 @@ impl Div<f64> for ThreeVector {
     }
 }
 
+impl Neg for ThreeVector {
+    type Output = Self;
+
+    fn neg(self) -> Self {
+        ThreeVector {
+            x: -self.x,
+            y: -self.y,
+            z: -self.z,
+        }
+    }
+}
+
+/// Multiply by a complex scalar element-wise
 impl Mul<Complex<f64>> for ThreeVector {
     type Output = ComplexThreeVector;
 
@@ -241,6 +329,10 @@ impl ThreeMatrix {
             y: self.rows[1].dot(other),
             z: self.rows[2].dot(other),
         }
+    }
+
+    pub fn sum(self) -> f64 {
+        self.rows.iter().map(|row| row.x + row.y + row.z).sum()
     }
 
     pub fn transpose(self) -> Self {
@@ -343,6 +435,7 @@ impl Div<f64> for ThreeMatrix {
     }
 }
 
+/// Multiply by a complex scalar element-wise
 impl Mul<Complex<f64>> for ThreeMatrix {
     type Output = ComplexThreeMatrix;
 
@@ -357,6 +450,11 @@ impl Mul<Complex<f64>> for ThreeMatrix {
     }
 }
 
+/// Multiply by a vector, each row is multiplied by the corresponding element of the vector
+///
+/// **Note**: This is not an inner product, for that use the [`dot`] method
+///
+/// [`dot`]: struct.ThreeMatrix.html#method.dot
 impl Mul<ThreeVector> for ThreeMatrix {
     type Output = ThreeMatrix;
 
@@ -376,11 +474,13 @@ impl ComplexThreeMatrix {
         self.rows.iter().map(|row| row.to_vec()).collect()
     }
 
+    /// Calculate the element-wise sum of the matrix, equivalent to a double contraction
     pub fn sum(self) -> Complex<f64> {
         self.rows.iter().map(|row| row.x + row.y + row.z).sum()
     }
 }
 
+/// Subtract two vectors element-wise
 impl Sub for ComplexThreeVector {
     type Output = Self;
 
@@ -393,6 +493,7 @@ impl Sub for ComplexThreeVector {
     }
 }
 
+/// Subtract two matrices element-wise
 impl Sub for ComplexThreeMatrix {
     type Output = Self;
 
@@ -407,6 +508,9 @@ impl Sub for ComplexThreeMatrix {
     }
 }
 
+/// Multiply by another matrix element-wise
+///
+/// **Note**: This is not standard matrix multiplication
 impl Mul<ThreeMatrix> for ComplexThreeMatrix {
     type Output = Self;
 

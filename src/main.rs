@@ -13,7 +13,7 @@ fn main() {
 
     println!(
         "{:?}",
-        geometry::zenith_azimuth_to_theta_phi_optimized(
+        geometry::rotation::zenith_azimuth_to_theta_phi_optimized(
             0.0,
             0.0,
             [-2106630.53831713, -3865062.66105881, 4600350.22663899],
