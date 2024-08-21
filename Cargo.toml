@@ -8,7 +8,7 @@ readme = "README.md"
 repository = "https://github.com/ColmTalbot/bilby_rust"
 license = "MIT"
 categories = ["science", "date-and-time"]
-exclude = ["examples/demonstration.ipynb", ".github/", ".gitignore"]
+exclude = ["examples/demonstration.ipynb", ".github/", ".gitignore", ".cargo_vcs_info.json"]
 
 [dependencies]
 chrono = "*"
