@@ -71,7 +71,7 @@ jobs:
           githubToken: ${{ github.token }}
           install: |
             apt-get update
-            apt-get install -y --no-install-recommends python3 python3-pip python3-venv build-essential
+            apt-get install -y --no-install-recommends python3 python3-pip python3-venv build-essential pkg-config
           run: |
             set -e
             python3 -m venv .venv
