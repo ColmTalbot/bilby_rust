@@ -11,10 +11,10 @@ categories = ["science", "date-and-time"]
 exclude = ["examples/demonstration.ipynb", ".github/", ".gitignore", ".cargo_vcs_info.json"]
 
 [dependencies]
-chrono = "*"
-numpy = "*"
-pyo3 = { version = "*", features = ["chrono", "extension-module", "num-complex"] }
-num-complex = "*"
+chrono = "0.4"
+numpy = "0.21"
+pyo3 = { version = "0.21", features = ["chrono", "extension-module", "num-complex"] }
+num-complex = "0.4"
 
 [lib]
 name = "bilby_rust"
