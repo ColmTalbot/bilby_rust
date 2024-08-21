@@ -71,15 +71,14 @@ jobs:
           githubToken: ${{ github.token }}
           install: |
             apt-get update
-            apt-get install -y --no-install-recommends python3 python3-pip python3-venv build-essential pkg-config
+            apt-get install -y --no-install-recommends python3-full python3-pip python3-venv build-essential pkg-config cmake
           run: |
             set -e
-            python3 -m venv .venv
-            source .venv/bin/activate
-            python -m pip install cmake
+            # python3 -m venv .venv
+            # source .venv/bin/activate
             # python -m pip install --force-reinstall ninja
-            python -m pip install bilby_rust[test] --find-links dist --force-reinstall
-            python -m pytest
+            python3 -m pip install bilby_rust[test] --find-links dist --force-reinstall --user
+            python3 -m pytest
 
   windows:
     runs-on: ${{ matrix.platform.runner }}
