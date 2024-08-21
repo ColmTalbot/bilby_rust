@@ -75,8 +75,10 @@ jobs:
             apt-get install -y --no-install-recommends python3 python3-pip
           run: |
             set -e
-              pip3 install --force-reinstall ninja
-            pip3 install bilby_rust[test] --find-links dist --force-reinstall
+            python3 -m venv .venv
+            source .venv/bin/activate
+            pip install --force-reinstall ninja
+            pip install bilby_rust[test] --find-links dist --force-reinstall
             pytest
 
   windows:
@@ -87,7 +89,7 @@ jobs:
           - runner: windows-latest
             target: x64
           - runner: windows-latest
-            target: x86_64
+            target: x86
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
