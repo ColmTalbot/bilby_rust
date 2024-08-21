@@ -32,9 +32,8 @@ jobs:
             target: aarch64
           - runner: ubuntu-latest
             target: armv7
-          # s390x failed with could not find ninja >=1.8.2
-          # - runner: ubuntu-latest
-          #  target: s390x
+          - runner: ubuntu-latest
+            target: s390x
           - runner: ubuntu-latest
             target: ppc64le
     steps:
@@ -72,14 +71,15 @@ jobs:
           githubToken: ${{ github.token }}
           install: |
             apt-get update
-            apt-get install -y --no-install-recommends python3-full python3-pip python3-venv
+            apt-get install -y --no-install-recommends python3 python3-pip python3-venv
           run: |
             set -e
             python3 -m venv .venv
             source .venv/bin/activate
-            pip install --force-reinstall ninja
-            pip install bilby_rust[test] --find-links dist --force-reinstall
-            pytest
+            python -m pip install cmake
+            python -m pip install --force-reinstall ninja
+            python -m pip install bilby_rust[test] --find-links dist --force-reinstall
+            python -m pytest
 
   windows:
     runs-on: ${{ matrix.platform.runner }}
@@ -111,9 +111,8 @@ jobs:
           set -e
           python3 -m venv .venv
           source .venv/Scripts/activate
-          pip install bilby_rust[test] --find-links dist --force-reinstall
-          bilby_cython is causing failures so disable windows tests for now
-          pytest
+          python -m pip install bilby_rust[test] --find-links dist --force-reinstall
+          python -m pytest
 
   macos:
     runs-on: ${{ matrix.platform.runner }}
