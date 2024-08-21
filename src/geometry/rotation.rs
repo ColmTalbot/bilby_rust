@@ -5,17 +5,17 @@ use pyo3::{pyfunction, Py};
 
 use super::three::{SphericalAngles, ThreeMatrix, ThreeVector};
 
-pub fn _rotation_matrix_from_vertices(vertex_1: ThreeVector, vertex_2: ThreeVector) -> ThreeMatrix {
+pub fn rotation_matrix_from_vertices(vertex_1: ThreeVector, vertex_2: ThreeVector) -> ThreeMatrix {
     let delta_x = (vertex_1 - vertex_2).normalize();
     let midpoint = (vertex_1 + vertex_2).normalize();
-    let x_axis = delta_x.cross(midpoint);
-    let y_axis = x_axis.cross(delta_x);
+    let x_axis = delta_x.cross(midpoint).normalize();
+    let y_axis = x_axis.cross(delta_x).normalize();
     ThreeMatrix {
         rows: [x_axis, y_axis, delta_x],
     }
 }
 
-pub fn _rotation_matrix_from_delta_x(delta_x: ThreeVector) -> ThreeMatrix {
+pub fn rotation_matrix_from_delta_x(delta_x: ThreeVector) -> ThreeMatrix {
     let delta_x = delta_x.normalize();
 
     let beta = delta_x.z.acos();
@@ -53,28 +53,24 @@ pub fn rotate_spherical_angles(zenith: f64, azimuth: f64, rotation: ThreeMatrix)
     (theta, phi)
 }
 
-#[allow(dead_code)]
 #[pyfunction]
-pub fn rotation_matrix_from_vertices(vertex_1: [f64; 3], vertex_2: [f64; 3]) -> Py<PyArray2<f64>> {
-    let rotation = _rotation_matrix_from_vertices(vertex_1.into(), vertex_2.into());
+pub fn _py_rotation_matrix_from_vertices(vertex_1: [f64; 3], vertex_2: [f64; 3]) -> Py<PyArray2<f64>> {
+    let rotation = rotation_matrix_from_vertices(vertex_1.into(), vertex_2.into());
     rotation.into()
 }
 
-#[allow(dead_code)]
 #[pyfunction]
-pub fn rotation_matrix_from_delta_x(delta_x: [f64; 3]) -> Py<PyArray2<f64>> {
-    let rotation = _rotation_matrix_from_delta_x(delta_x.into());
+pub fn _py_rotation_matrix_from_delta_x(delta_x: [f64; 3]) -> Py<PyArray2<f64>> {
+    let rotation = rotation_matrix_from_delta_x(delta_x.into());
     rotation.into()
 }
 
-#[allow(dead_code)]
 #[pyfunction]
 pub fn zenith_azimuth_to_theta_phi(zenith: f64, azimuth: f64, delta_x: [f64; 3]) -> (f64, f64) {
-    let rotation = _rotation_matrix_from_delta_x(delta_x.into());
+    let rotation = rotation_matrix_from_delta_x(delta_x.into());
     rotate_spherical_angles(zenith, azimuth, rotation)
 }
 
-#[allow(dead_code)]
 #[pyfunction]
 pub fn zenith_azimuth_to_theta_phi_optimized(
     zenith: f64,
@@ -82,6 +78,67 @@ pub fn zenith_azimuth_to_theta_phi_optimized(
     vertex_1: [f64; 3],
     vertex_2: [f64; 3],
 ) -> (f64, f64) {
-    let rotation = _rotation_matrix_from_vertices(vertex_1.into(), vertex_2.into());
+    let rotation = rotation_matrix_from_vertices(vertex_1.into(), vertex_2.into());
     rotate_spherical_angles(zenith, azimuth, rotation)
+}
+
+#[pyfunction]
+pub fn theta_phi_to_zenith_azimuth(theta: f64, phi: f64, delta_x: [f64; 3]) -> (f64, f64) {
+    let rotation = rotation_matrix_from_delta_x(delta_x.into());
+    rotate_spherical_angles(theta, phi, rotation.transpose())
+}
+
+#[pyfunction]
+pub fn theta_phi_to_zenith_azimuth_optimized(
+    theta: f64,
+    phi: f64,
+    vertex_1: [f64; 3],
+    vertex_2: [f64; 3],
+) -> (f64, f64) {
+    let rotation = rotation_matrix_from_vertices(vertex_1.into(), vertex_2.into());
+    rotate_spherical_angles(theta, phi, rotation.transpose())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    macro_rules! assert_approx_eq {
+        ($a:expr, $b:expr) => {
+            const EPSILON: f64 = 1e-10;
+            assert!(
+                ($a.0 - $b.0).abs() < EPSILON,
+                "Values not approximately equal: {} vs {}",
+                $a.0,
+                $b.0
+            );
+            assert!(
+                ($a.1 - $b.1).abs() < EPSILON,
+                "Values not approximately equal: {} vs {}",
+                $a.1,
+                $b.1
+            );
+        };
+    }
+
+    #[test]
+    fn test_theta_phi_zenith_azimuth_inverse_delta() {
+        let (theta, phi): (f64, f64) = (1.0, 2.0);
+        let delta: [f64; 3] = [0.1, 0.5, 3.0];
+        let (zenith, azimuth) = theta_phi_to_zenith_azimuth(theta, phi, delta);
+        let result: (f64, f64) = zenith_azimuth_to_theta_phi(zenith, azimuth, delta);
+        assert_approx_eq!(result, (theta, phi));
+    }
+
+    #[test]
+    fn test_theta_phi_zenith_azimuth_inverse_vertices() {
+        let (theta, phi): (f64, f64) = (1.0, 2.0);
+        let vertex_1: [f64; 3] = [0.1, 0.5, 3.0];
+        let vertex_2: [f64; 3] = [0.4, 0.1, 1.0];
+        let (zenith, azimuth) =
+            theta_phi_to_zenith_azimuth_optimized(theta, phi, vertex_1, vertex_2);
+        let result: (f64, f64) =
+            zenith_azimuth_to_theta_phi_optimized(zenith, azimuth, vertex_1, vertex_2);
+        assert_approx_eq!(result, (theta, phi));
+    }
 }

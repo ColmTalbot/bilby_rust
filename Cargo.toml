@@ -12,7 +12,6 @@ exclude = ["examples/demonstration.ipynb"]
 
 [dependencies]
 chrono = "*"
-physical_constants = "*"
 numpy = "*"
 pyo3 = { version = "*", features = ["chrono", "extension-module", "num-complex"] }
 num-complex = "*"

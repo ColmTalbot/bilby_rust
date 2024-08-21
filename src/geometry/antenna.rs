@@ -2,8 +2,9 @@ use std::f64::consts::{FRAC_PI_2, PI};
 
 use num_complex::Complex;
 use numpy::{PyArray1, PyArray2, PyArray3};
-use physical_constants::SPEED_OF_LIGHT_IN_VACUUM;
 use pyo3::{exceptions::PyValueError, pyfunction, Py, PyErr, PyResult, Python};
+
+const SPEED_OF_LIGHT_IN_VACUUM: f64 = 299_792_458.0;
 
 use super::{
     polarization::polarization_tensor,
@@ -56,7 +57,7 @@ impl DetectorGeometry {
     }
 
     /// Calculates the detector tensor for a given frequency, GPS time, and sky location
-    /// including finite-size effects.
+    /// including finite-size effects (see [Essick et al. 2017](https://arxiv.org/abs/1708.06843)).
     ///
     /// # Arguments
     ///
@@ -133,7 +134,6 @@ const GEOCENTER: ThreeVector = ThreeVector {
 ///
 /// A `ThreeMatrix` representing the polarization tensor or a 3x3 `numpy` array
 /// when called through the `Python` bindings.
-#[allow(dead_code)]
 #[pyfunction]
 pub fn get_polarization_tensor(
     ra: f64,
@@ -166,7 +166,6 @@ pub fn get_polarization_tensor(
 /// # Returns
 ///
 /// The time delay between the two vertices in seconds.
-#[allow(dead_code)]
 #[pyfunction]
 pub fn time_delay_geocentric(
     vertex_1: [f64; 3],
@@ -202,13 +201,23 @@ fn _time_delay_from_vertices(
 /// # Returns
 ///
 /// The time delay between the vertex and the geocenter in seconds.
-#[allow(dead_code)]
 #[pyfunction]
 pub fn time_delay_from_geocenter(vertex: [f64; 3], ra: f64, dec: f64, gps_time: f64) -> f64 {
     _time_delay_from_vertices(vertex.into(), GEOCENTER, ra, dec, gps_time)
 }
 
-#[allow(dead_code)]
+/// Calculate the vecetor connecting the beam splitter to the end test mass.
+/// 
+/// # Arguments
+/// 
+/// * `arm_tilt` - The tilt angle of the arm in radians.
+/// * `arm_azimuth` - The azimuth angle of the arm in radians.
+/// * `longitude` - The longitude of the detector in radians.
+/// * `latitude` - The latitude of the detector in radians.
+/// 
+/// # Returns
+/// 
+/// A `numpy` array representing the arm vector.
 #[pyfunction]
 pub fn calculate_arm(
     arm_tilt: f64,
@@ -241,7 +250,16 @@ pub fn calculate_arm(
         .into()
 }
 
-#[allow(dead_code)]
+/// Calculate the detector tensor for a given set of arm vectors.
+/// 
+/// # Arguments
+/// 
+/// * `arm_1` - The first arm vector as a 3-element array.
+/// * `arm_2` - The second arm vector as a 3-element array.
+/// 
+/// # Returns
+/// 
+/// A `numpy` array representing the detector tensor.
 #[pyfunction]
 pub fn detector_tensor(x: [f64; 3], y: [f64; 3]) -> Py<PyArray2<f64>> {
     let det = DetectorGeometry::new(x.into(), y.into(), 1.0);
@@ -262,7 +280,6 @@ pub fn detector_tensor(x: [f64; 3], y: [f64; 3]) -> Py<PyArray2<f64>> {
 /// A `numpy` array of time delays in seconds.
 ///
 /// [`time_delay_from_geocenter`]: ./fn.time_delay_from_geocenter.html
-#[allow(dead_code)]
 #[pyfunction]
 pub fn time_delay_from_geocenter_vectorized(
     vertex: [f64; 3],
@@ -295,7 +312,6 @@ pub fn time_delay_from_geocenter_vectorized(
 /// A `numpy` array of detector tensors (`shape=(N,3,3)`).
 ///
 /// [`polarization_tensor`]: ./fn.polarization_tensor.html
-#[allow(dead_code)]
 #[pyfunction]
 pub fn time_dependent_polarization_tensor(
     ra: f64,

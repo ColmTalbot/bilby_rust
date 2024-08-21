@@ -16,6 +16,15 @@ const DAYS_PER_CENTURY: f64 = 36525.0;
 const SECONDS_PER_DAY: f64 = 86400.0;
 const SECONDS_PER_CENTURY: f64 = DAYS_PER_CENTURY * SECONDS_PER_DAY;
 
+/// Returns the number of leap seconds that have occurred before the given GPS time.
+///
+/// Leap seconds occur at 46828800, 78364801, 109900802, 173059203, 252028804, 315187205,
+/// 346723206, 393984007, 425520008, 457056009, 504489610, 551750411, 599184012, 820108813,
+/// 914803214, 1025136015, 1119744016, 1167264017.
+///
+/// # Arguments
+///
+/// * `s` - The GPS time in seconds since the GPS epoch (January 6, 1980).
 #[pyfunction]
 pub fn n_leap_seconds(s: i32) -> i32 {
     let mut i: usize = NUM_LEAPS;
@@ -26,6 +35,15 @@ pub fn n_leap_seconds(s: i32) -> i32 {
     i
 }
 
+/// Convert from GPS time to UTC time.
+///
+/// # Arguments
+///
+/// * `gps_time` - The GPS time in seconds since the GPS epoch (January 6, 1980).
+///
+/// # Returns
+///
+/// A `DateTime<Utc>` representing the corresponding UTC time.
 #[pyfunction]
 pub fn gps_time_to_utc(gps_time: i32) -> DateTime<Utc> {
     let leap_seconds = n_leap_seconds(gps_time);
@@ -34,6 +52,20 @@ pub fn gps_time_to_utc(gps_time: i32) -> DateTime<Utc> {
     gps_time - TimeDelta::seconds(leap_seconds as i64)
 }
 
+/// Convert from UTC time to Julian Day.
+///
+/// The Julian Day is a continuous count of days since the beginning of the Julian Period on
+/// January 1, 4713 BC and is given by
+///
+/// JD = 367 * year - floor(7 * (year + floor((month + 9) / 12)) / 4) + floor(275 * month / 9) + day + 1721014.5
+///
+/// # Arguments
+///
+/// * `time` - A `DateTime<Utc>` representing the UTC time.
+///
+/// # Returns
+///
+/// A `f64` representing the corresponding Julian Day.
 #[pyfunction]
 pub fn utc_to_julian_day(time: DateTime<Utc>) -> f64 {
     let year = time.year();
@@ -50,6 +82,29 @@ pub fn utc_to_julian_day(time: DateTime<Utc>) -> f64 {
     julian_day
 }
 
+/// Calculate the Greenwich Sidereal Time (GST) for a given GPS time and equation of equinoxes.
+///
+/// The GST is the angle between the Greenwich meridian and the vernal equinox, measured in
+/// radians. The equation of equinoxes accounts for the difference between mean solar time and
+/// sidereal time.
+///
+/// The formula used is:
+///
+/// GST = E + (3164400184.812866 * T + 0.093104 * T^2 - 6.2e-6 * T^3 + 67310.54841) mod 86400
+///
+/// where:
+///
+/// T = (JD - 2451545.0) / 36525
+/// E = equation of equinoxes in radians
+///
+/// # Arguments
+///
+/// * `gps_time` - The GPS time in seconds since the GPS epoch (January 6, 1980).
+/// * `equation_of_equinoxes` - The equation of equinoxes in radians.
+///
+/// # Returns
+///
+/// A `f64` representing the Greenwich Sidereal Time in radians.
 #[pyfunction]
 pub fn greenwich_sidereal_time(gps_time: f64, equation_of_equinoxes: f64) -> f64 {
     let julian_day = utc_to_julian_day(gps_time_to_utc(gps_time.floor() as i32));
@@ -59,21 +114,57 @@ pub fn greenwich_sidereal_time(gps_time: f64, equation_of_equinoxes: f64) -> f64
     let t = t_high + t_low;
 
     let mut sidereal_time =
-        equation_of_equinoxes + (-6.2e-6 * t + 0.093104) * t.powf(2.0) + 67310.54841;
-    sidereal_time += 8640184.812866 * t_high;
-    sidereal_time += 3155760000.0 * t_high;
-    sidereal_time += 8640184.812866 * t_low;
-    sidereal_time += 3155760000.0 * t_low;
+        equation_of_equinoxes + 67310.54841 + 0.093104 * t.powi(2) - 6.2e-6 * t.powi(3);
+    sidereal_time += 3164400184.812866 * t;
 
     sidereal_time * PI / 43200.0
 }
 
+/// Calculate the Greenwich Mean Sidereal Time (GMST) for a given GPS time.
+///
+/// The GMST is the angle between the Greenwich meridian and the vernal equinox, measured in
+/// radians.
+///
+/// The formula used is:
+///
+/// GMST = (3164400184.812866 * T + 0.093104 * T^2 - 6.2e-6 * T^3 + 67310.54841) mod 86400
+///
+/// where:
+///
+/// T = (JD - 2451545.0) / 36525
+///
+/// # Arguments
+///
+/// * `gps_time` - The GPS time in seconds since the GPS epoch (January 6, 1980).
+///
+/// # Returns
+///
+/// A `f64` representing the Greenwich Sidereal Time in radians.
 #[pyfunction]
 pub fn greenwich_mean_sidereal_time(gps_time: f64) -> f64 {
     greenwich_sidereal_time(gps_time, 0.0)
 }
 
-#[allow(dead_code)]
+/// Calculate the Greenwich Mean Sidereal Time (GMST) for a set of GPS times.
+///
+/// The GMST is the angle between the Greenwich meridian and the vernal equinox, measured in
+/// radians.
+///
+/// The formula used is:
+///
+/// GMST = (3164400184.812866 * T + 0.093104 * T^2 - 6.2e-6 * T^3 + 67310.54841) mod 86400
+///
+/// where:
+///
+/// T = (JD - 2451545.0) / 36525
+///
+/// # Arguments
+///
+/// * `gps_times` - A vector of GPS times in seconds since the GPS epoch (January 6, 1980).
+///
+/// # Returns
+///
+/// A vector of `f64` representing the corresponding Greenwich Mean Sidereal Times in radians.
 #[pyfunction]
 pub fn greenwich_mean_sidereal_time_vectorized(gps_times: Vec<f64>) -> Py<PyArray1<f64>> {
     let times = gps_times

@@ -1,3 +1,6 @@
+/// `Python` bindings for the antenna response functions including time- and frequency-dependent
+/// responses in addition to the standard time- and frequency-independent responses.
+
 use num_complex::Complex;
 use numpy::{Complex64, PyArray1, PyArray2, PyArray3};
 use pyo3::{pyfunction, Py, Python};
@@ -8,7 +11,6 @@ use super::{
     util::ra_dec_to_theta_phi,
 };
 
-#[allow(dead_code)]
 #[pyfunction]
 pub fn frequency_dependent_detector_tensor(
     x: [f64; 3],
@@ -32,7 +34,7 @@ pub fn frequency_dependent_detector_tensor(
     Python::with_gil(|py| PyArray3::from_vec3_bound(py, &output).unwrap().unbind())
 }
 
-#[allow(clippy::too_many_arguments, dead_code)]
+#[allow(clippy::too_many_arguments)]
 #[pyfunction]
 pub fn antenna_response(
     x: [f64; 3],
@@ -59,7 +61,7 @@ pub fn antenna_response(
     Python::with_gil(|py| PyArray1::from_vec_bound(py, output).unbind())
 }
 
-#[allow(clippy::too_many_arguments, dead_code)]
+#[allow(clippy::too_many_arguments)]
 #[pyfunction]
 pub fn antenna_response_tensor_modes(
     x: [f64; 3],
@@ -84,7 +86,7 @@ pub fn antenna_response_tensor_modes(
     )
 }
 
-#[allow(clippy::too_many_arguments, dead_code)]
+#[allow(clippy::too_many_arguments)]
 #[pyfunction]
 pub fn antenna_response_all_modes(
     x: [f64; 3],
@@ -109,7 +111,7 @@ pub fn antenna_response_all_modes(
     )
 }
 
-#[allow(clippy::too_many_arguments, dead_code)]
+#[allow(clippy::too_many_arguments)]
 #[pyfunction]
 pub fn antenna_response_multiple_modes(
     x: [f64; 3],
@@ -134,8 +136,7 @@ pub fn antenna_response_multiple_modes(
             let det_tensor = det.finite_size_tensor(frequency, gps_time, ra, dec);
             modes
                 .iter()
-                .map(|mode| (det_tensor * pol.mode(mode)).sum()
-            )
+                .map(|mode| (det_tensor * pol.mode(mode)).sum())
                 .collect()
         })
         .collect();

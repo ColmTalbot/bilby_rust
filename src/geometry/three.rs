@@ -43,7 +43,7 @@ impl From<(f64, f64)> for SphericalAngles {
 /// * `x`: x-component of the vector
 /// * `y`: y-component of the vector
 /// * `z`: z-component of the vector
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ThreeVector {
     pub x: f64,
     pub y: f64,
@@ -60,7 +60,7 @@ pub struct ThreeVector {
 /// * `x`: x-component of the vector
 /// * `y`: y-component of the vector
 /// * `z`: z-component of the vector
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ComplexThreeVector {
     pub x: Complex<f64>,
     pub y: Complex<f64>,
@@ -74,7 +74,7 @@ pub struct ComplexThreeVector {
 /// # Fields
 ///
 /// * `rows`: Array of three `ThreeVector` structs
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ThreeMatrix {
     pub rows: [ThreeVector; 3],
 }
@@ -86,7 +86,7 @@ pub struct ThreeMatrix {
 /// # Fields
 ///
 /// * `rows`: Array of three `ComplexThreeVector` structs
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ComplexThreeMatrix {
     pub rows: [ComplexThreeVector; 3],
 }

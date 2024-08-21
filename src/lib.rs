@@ -21,7 +21,8 @@ use geometry::response::{
     antenna_response_tensor_modes, frequency_dependent_detector_tensor,
 };
 use geometry::rotation::{
-    rotation_matrix_from_delta_x, rotation_matrix_from_vertices, zenith_azimuth_to_theta_phi,
+    _py_rotation_matrix_from_delta_x, _py_rotation_matrix_from_vertices, theta_phi_to_zenith_azimuth,
+    theta_phi_to_zenith_azimuth_optimized, zenith_azimuth_to_theta_phi,
     zenith_azimuth_to_theta_phi_optimized,
 };
 use geometry::util::ra_dec_to_theta_phi;
@@ -67,12 +68,17 @@ fn bilby_rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     g_.add_function(wrap_pyfunction!(frequency_dependent_detector_tensor, &g_)?)?;
     g_.add_function(wrap_pyfunction!(get_polarization_tensor, &g_)?)?;
     g_.add_function(wrap_pyfunction!(ra_dec_to_theta_phi, &g_)?)?;
-    g_.add_function(wrap_pyfunction!(rotation_matrix_from_delta_x, &g_)?)?;
-    g_.add_function(wrap_pyfunction!(rotation_matrix_from_vertices, &g_)?)?;
+    g_.add_function(wrap_pyfunction!(_py_rotation_matrix_from_delta_x, &g_)?)?;
+    g_.add_function(wrap_pyfunction!(_py_rotation_matrix_from_vertices, &g_)?)?;
     g_.add_function(wrap_pyfunction!(time_delay_geocentric, &g_)?)?;
     g_.add_function(wrap_pyfunction!(time_delay_from_geocenter, &g_)?)?;
     g_.add_function(wrap_pyfunction!(time_delay_from_geocenter_vectorized, &g_)?)?;
     g_.add_function(wrap_pyfunction!(time_dependent_polarization_tensor, &g_)?)?;
+    g_.add_function(wrap_pyfunction!(theta_phi_to_zenith_azimuth, &g_)?)?;
+    g_.add_function(wrap_pyfunction!(
+        theta_phi_to_zenith_azimuth_optimized,
+        &g_
+    )?)?;
     g_.add_function(wrap_pyfunction!(zenith_azimuth_to_theta_phi, &g_)?)?;
     g_.add_function(wrap_pyfunction!(
         zenith_azimuth_to_theta_phi_optimized,
