@@ -72,7 +72,7 @@ jobs:
           githubToken: ${{ github.token }}
           install: |
             apt-get update
-            apt-get install -y --no-install-recommends python3 python3-pip python3-venv
+            apt-get install -y --no-install-recommends python3-full python3-pip python3-venv
           run: |
             set -e
             python3 -m venv .venv
@@ -145,8 +145,8 @@ jobs:
           set -e
           python3 -m venv .venv
           source .venv/bin/activate
-          pip install bilby_rust[test] --find-links dist --force-reinstall
-          pytest
+          python -m pip install bilby_rust[test] --find-links dist --force-reinstall
+          python -m pytest
 
   # release:
   #   name: Release
