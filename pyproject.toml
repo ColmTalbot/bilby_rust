@@ -1,0 +1,20 @@
+[project]
+name = "bilby_rust"
+version = "0.1.0"
+authors = [{name = "Colm Talbot", email = "talbotcolm@gmail.com"}]
+description = "Rust implementation of domain-specific geometrical operations for Bilby to mirror the functionality in bilby-cython using PyO3."
+readme = "README.md"
+repository = "https://github.com/ColmTalbot/bilby_rust"
+license = "MIT"
+requires-python = ">=3.7"
+dependencies = ["numpy"]
+
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-cov",
+]
