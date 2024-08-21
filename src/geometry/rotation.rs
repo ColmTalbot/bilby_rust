@@ -53,13 +53,13 @@ pub fn rotate_spherical_angles(zenith: f64, azimuth: f64, rotation: ThreeMatrix)
     (theta, phi)
 }
 
-#[pyfunction]
+#[pyfunction(name = "rotation_matrix_from_vertices")]
 pub fn _py_rotation_matrix_from_vertices(vertex_1: [f64; 3], vertex_2: [f64; 3]) -> Py<PyArray2<f64>> {
     let rotation = rotation_matrix_from_vertices(vertex_1.into(), vertex_2.into());
     rotation.into()
 }
 
-#[pyfunction]
+#[pyfunction(name = "rotation_matrix_from_delta_x")]
 pub fn _py_rotation_matrix_from_delta_x(delta_x: [f64; 3]) -> Py<PyArray2<f64>> {
     let rotation = rotation_matrix_from_delta_x(delta_x.into());
     rotation.into()
