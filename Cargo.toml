@@ -1,7 +1,14 @@
 [package]
 name = "bilby_rust"
 version = "0.1.0"
+authors = ["Colm Talbot <talbotcolm@gmail.com>"]
 edition = "2021"
+description = "Rust implementation of domain-specific geometrical operations for Bilby to mirror the functionality in bilby-cython using PyO3."
+readme = "README.md"
+repository = "https://github.com/ColmTalbot/bilby_rust"
+license = "MIT"
+categories = ["science", "date-and-time"]
+exclude = ["examples/demonstration.ipynb"]
 
 [dependencies]
 chrono = "*"
