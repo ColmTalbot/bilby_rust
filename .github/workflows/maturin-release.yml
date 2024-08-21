@@ -72,7 +72,7 @@ jobs:
           githubToken: ${{ github.token }}
           install: |
             apt-get update
-            apt-get install -y --no-install-recommends python3 python3-pip
+            apt-get install -y --no-install-recommends python3 python3-pip python3-venv
           run: |
             set -e
             python3 -m venv .venv
@@ -88,8 +88,6 @@ jobs:
         platform:
           - runner: windows-latest
             target: x64
-          - runner: windows-latest
-            target: x86
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -108,15 +106,14 @@ jobs:
           name: wheels-windows-${{ matrix.platform.target }}
           path: dist
       - name: pytest
-        if: ${{ !startsWith(matrix.platform.target, 'x64') }}
         shell: bash
         run: |
           set -e
           python3 -m venv .venv
           source .venv/Scripts/activate
           pip install bilby_rust[test] --find-links dist --force-reinstall
-          # bilby_cython is causing failures so disable windows tests for now
-          # pytest
+          bilby_cython is causing failures so disable windows tests for now
+          pytest
 
   macos:
     runs-on: ${{ matrix.platform.runner }}
