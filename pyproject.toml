@@ -17,4 +17,5 @@ build-backend = "maturin"
 test = [
     "pytest",
     "pytest-cov",
+    "bilby.cython"
 ]
