@@ -171,7 +171,7 @@ pub fn greenwich_mean_sidereal_time_vectorized(gps_times: Vec<f64>) -> Py<PyArra
         .iter()
         .map(|&gps_time| greenwich_mean_sidereal_time(gps_time))
         .collect();
-    Python::with_gil(|py| PyArray1::from_vec_bound(py, times).unbind())
+    Python::with_gil(|py| PyArray1::from_vec(py, times).unbind())
 }
 
 #[cfg(test)]

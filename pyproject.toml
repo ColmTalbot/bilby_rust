@@ -1,6 +1,6 @@
 [project]
 name = "bilby_rust"
-version = "0.1.0"
+version = "0.1.1"
 authors = [{name = "Colm Talbot", email = "talbotcolm@gmail.com"}]
 description = "Rust implementation of domain-specific geometrical operations for Bilby to mirror the functionality in bilby-cython using PyO3."
 readme = "README.md"
@@ -19,4 +19,5 @@ test = [
     "pytest-cov",
     "bilby.cython",
     "bilby",
+    "scipy < 1.15",
 ]

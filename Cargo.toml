@@ -1,6 +1,6 @@
 [package]
 name = "bilby_rust"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Colm Talbot <talbotcolm@gmail.com>"]
 edition = "2021"
 description = "Rust implementation of domain-specific geometrical operations for Bilby to mirror the functionality in bilby-cython using PyO3."
@@ -12,8 +12,8 @@ exclude = ["examples/demonstration.ipynb", ".github/", ".gitignore", ".cargo_vcs
 
 [dependencies]
 chrono = "0.4"
-numpy = "0.21"
-pyo3 = { version = "0.21", features = ["chrono", "extension-module", "num-complex"] }
+numpy = "0.23"
+pyo3 = { version = "0.23", features = ["chrono", "extension-module", "num-complex"] }
 num-complex = "0.4"
 
 [lib]
