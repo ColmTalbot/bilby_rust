@@ -291,7 +291,7 @@ pub fn time_delay_from_geocenter_vectorized(
         .iter()
         .map(|&gps_time| time_delay_from_geocenter(vertex, ra, dec, gps_time))
         .collect();
-    Python::with_gil(|py| PyArray1::from_vec_bound(py, times).unbind())
+    Python::with_gil(|py| PyArray1::from_vec(py, times).unbind())
 }
 
 /// Calculate the detector tensor for a set of GPS times.
@@ -324,5 +324,5 @@ pub fn time_dependent_polarization_tensor(
         .iter()
         .map(|&gps_time| polarization_tensor(ra, dec, gps_time, psi, mode).into())
         .collect();
-    Python::with_gil(|py| PyArray3::from_vec3_bound(py, &output).unwrap().unbind())
+    Python::with_gil(|py| PyArray3::from_vec3(py, &output).unwrap().unbind())
 }

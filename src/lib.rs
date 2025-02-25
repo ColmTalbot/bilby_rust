@@ -5,7 +5,7 @@
 /// This is primarily intended to be used as a dependency for the `bilby` gravitational-wave
 /// parameter estimation package. However, it can also be used as a standalone package for
 /// computing detector responses and antenna patterns.
-use pyo3::types::PyModule;
+use pyo3::types::{PyModule, PyModuleMethods};
 use pyo3::{py_run, pymodule, wrap_pyfunction, Bound, PyResult};
 
 pub mod geometry;
@@ -35,7 +35,7 @@ use time::{
 fn bilby_rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__all__", ["time", "geometry"])?;
 
-    let t_: Bound<'_, PyModule> = PyModule::new_bound(m.py(), "time")?;
+    let t_: Bound<'_, PyModule> = PyModule::new(m.py(), "time")?;
     // see https://github.com/PyO3/pyo3/issues/1517#issuecomment-808664021
     py_run!(
         m.py(),
@@ -53,7 +53,7 @@ fn bilby_rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     t_.add_function(wrap_pyfunction!(utc_to_julian_day, &t_)?)?;
     m.add_submodule(&t_)?;
 
-    let g_: Bound<'_, PyModule> = PyModule::new_bound(m.py(), "geometry")?;
+    let g_: Bound<'_, PyModule> = PyModule::new(m.py(), "geometry")?;
     py_run!(
         m.py(),
         g_,

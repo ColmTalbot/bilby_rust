@@ -31,7 +31,7 @@ pub fn frequency_dependent_detector_tensor(
                 .to_vec()
         })
         .collect();
-    Python::with_gil(|py| PyArray3::from_vec3_bound(py, &output).unwrap().unbind())
+    Python::with_gil(|py| PyArray3::from_vec3(py, &output).unwrap().unbind())
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -58,7 +58,7 @@ pub fn antenna_response(
             (det.finite_size_tensor(frequency, gps_time, ra, dec) * pol.mode(mode)).sum()
         })
         .collect();
-    Python::with_gil(|py| PyArray1::from_vec_bound(py, output).unbind())
+    Python::with_gil(|py| PyArray1::from_vec(py, output).unbind())
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -140,5 +140,5 @@ pub fn antenna_response_multiple_modes(
                 .collect()
         })
         .collect();
-    Python::with_gil(|py| PyArray2::from_vec2_bound(py, &output).unwrap().unbind())
+    Python::with_gil(|py| PyArray2::from_vec2(py, &output).unwrap().unbind())
 }
