@@ -50,8 +50,8 @@ jobs:
             3.13
       - name: find and remove freeethreaded python
         run: |
-          which python3.13t
-          rm $(which python3.13t)
+          which python3.8
+          ls $(dirname $(which python3.8))/python*
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
