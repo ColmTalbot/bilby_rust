@@ -50,7 +50,8 @@ jobs:
             3.13
       - name: find and remove freeethreaded python
         run: |
-          which python3.8
+          echo $PATH
+          which python3.13t
           ls $(dirname $(which python3.8))/python*
           ls /opt/hostedtoolcache/Python/*/*/bin/python*
       - name: Build wheels
