@@ -52,6 +52,7 @@ jobs:
         run: |
           which python3.8
           ls $(dirname $(which python3.8))/python*
+          ls /opt/hostedtoolcache/Python
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
