@@ -31,7 +31,7 @@ use time::{
     n_leap_seconds, utc_to_julian_day,
 };
 
-#[pymodule]
+#[pymodule(gil_used = false)]
 fn bilby_rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__all__", ["time", "geometry"])?;
 

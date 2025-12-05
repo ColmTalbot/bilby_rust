@@ -19,5 +19,5 @@ test = [
     "pytest-cov",
     "bilby.cython",
     "bilby",
-    "scipy < 1.15",
+    "scipy",
 ]
