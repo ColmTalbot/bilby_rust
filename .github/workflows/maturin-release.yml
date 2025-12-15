@@ -48,8 +48,6 @@ jobs:
             3.12
             3.13
             3.13t
-            3.14
-            3.14t
       - name: find and remove freeethreaded python
         run: |
           echo $PATH
@@ -60,7 +58,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist -i python3.8 python3.9 python3.10 python3.11 python3.12 python3.13
+          args: --release --out dist -i python3.8 python3.9 python3.10 python3.11 python3.12 python3.13 python3.13t
           sccache: 'true'
           manylinux: auto
       - name: Upload wheels
@@ -114,8 +112,6 @@ jobs:
             3.12
             3.13
             3.13t
-            3.14
-            3.14t
           architecture: ${{ matrix.platform.target }}
       - name: Build wheels
         uses: PyO3/maturin-action@v1
