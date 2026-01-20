@@ -12,8 +12,8 @@ exclude = ["examples/demonstration.ipynb", ".github/", ".gitignore", ".cargo_vcs
 
 [dependencies]
 chrono = "0.4"
-numpy = "0.23"
-pyo3 = { version = "0.23", features = ["chrono", "extension-module", "num-complex"] }
+numpy = "0.27"
+pyo3 = { version = "0.27", features = ["chrono", "extension-module", "num-complex"] }
 num-complex = "0.4"
 
 [lib]
