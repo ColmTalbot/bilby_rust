@@ -54,11 +54,12 @@ jobs:
           args: --release --out dist -i python3.10
           sccache: 'true'
           manylinux: auto
+      # rust-numpy only supports free-threaded Python on 32-bit targets from 3.15
       - name: Build free-threaded wheels
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist -i python3.14t python3.15t
+          args: --release --out dist -i ${{ contains(fromJSON('["x86", "armv7"]'), matrix.platform.target) && 'python3.15t' || 'python3.14t python3.15t' }}
           sccache: 'true'
           manylinux: auto
       - name: Upload wheels
