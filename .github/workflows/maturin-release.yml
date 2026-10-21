@@ -37,31 +37,33 @@ jobs:
           - runner: ubuntu-latest
             target: ppc64le
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: |
-            3.8
-            3.9
             3.10
-            3.11
-            3.12
+            3.14t
+            3.15t
             3.13
-      - name: find and remove freeethreaded python
-        run: |
-          echo $PATH
-          ls /bin/python*
-          ls /usr/bin/python*
-          ls /usr/local/bin/python*
-      - name: Build wheels
+          allow-prereleases: true
+      # abi3 and abi3t are built separately: maturin mis-tags the abi3 wheel if both are in one call
+      - name: Build abi3 wheel
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist -i python3.8 python3.9 python3.10 python3.11 python3.12 python3.13
+          args: --release --out dist -i python3.10
+          sccache: 'true'
+          manylinux: auto
+      # rust-numpy only supports free-threaded Python on 32-bit targets from 3.15
+      - name: Build free-threaded wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.platform.target }}
+          args: --release --out dist -i ${{ contains(fromJSON('["x86", "armv7"]'), matrix.platform.target) && 'python3.15t' || 'python3.14t python3.15t' }}
           sccache: 'true'
           manylinux: auto
       - name: Upload wheels
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: wheels-linux-${{ matrix.platform.target }}
           path: dist
@@ -100,25 +102,31 @@ jobs:
           - runner: windows-latest
             target: x64
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: |
-            3.8
-            3.9
             3.10
-            3.11
-            3.12
+            3.14t
+            3.15t
             3.13
+          allow-prereleases: true
           architecture: ${{ matrix.platform.target }}
-      - name: Build wheels
+      # abi3 and abi3t are built separately: maturin mis-tags the abi3 wheel if both are in one call
+      - name: Build abi3 wheel
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist -i python3.8 python3.9 python3.10 python3.11 python3.12 python3.13
+          args: --release --out dist -i python3.10
+          sccache: 'true'
+      - name: Build free-threaded wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.platform.target }}
+          args: --release --out dist -i python3.14t python3.15t
           sccache: 'true'
       - name: Upload wheels
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: wheels-windows-${{ matrix.platform.target }}
           path: dist
@@ -138,29 +146,35 @@ jobs:
     strategy:
       matrix:
         platform:
-          - runner: macos-13
+          - runner: macos-26-intel
             target: x86_64
-          - runner: macos-14
+          - runner: macos-26
             target: aarch64
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: |
-            3.8
-            3.9
             3.10
-            3.11
-            3.12
+            3.14t
+            3.15t
             3.13
-      - name: Build wheels
+          allow-prereleases: true
+      # abi3 and abi3t are built separately: maturin mis-tags the abi3 wheel if both are in one call
+      - name: Build abi3 wheel
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist -i python3.8 python3.9 python3.10 python3.11 python3.12 python3.13
+          args: --release --out dist -i python3.10
+          sccache: 'true'
+      - name: Build free-threaded wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.platform.target }}
+          args: --release --out dist -i python3.14t python3.15t
           sccache: 'true'
       - name: Upload wheels
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: wheels-macos-${{ matrix.platform.target }}
           path: dist
@@ -178,7 +192,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     needs: [linux, windows, macos]
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
       - name: Publish to PyPI
         uses: PyO3/maturin-action@v1
         env:

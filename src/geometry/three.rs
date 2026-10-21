@@ -197,7 +197,7 @@ impl From<&ThreeVector> for Vec<f64> {
 impl From<ThreeVector> for Py<PyArray1<f64>> {
     fn from(vector: ThreeVector) -> Self {
         let output = vec![vector.x, vector.y, vector.z];
-        Python::with_gil(|py| PyArray1::from_vec(py, output).unbind())
+        Python::attach(|py| PyArray1::from_vec(py, output).unbind())
     }
 }
 
@@ -389,7 +389,7 @@ impl From<ThreeMatrix> for Vec<Vec<f64>> {
 impl From<ThreeMatrix> for Py<PyArray2<f64>> {
     fn from(matrix: ThreeMatrix) -> Self {
         let output: Vec<Vec<f64>> = matrix.into();
-        Python::with_gil(|py| PyArray2::from_vec2(py, &output).unwrap().unbind())
+        Python::attach(|py| PyArray2::from_vec2(py, &output).unwrap().unbind())
     }
 }
 
