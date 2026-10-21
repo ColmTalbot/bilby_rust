@@ -1,7 +1,5 @@
 use std::f64::consts::{FRAC_PI_2, PI};
 
-use numpy::PyArray2;
-use pyo3::{pyfunction, Py};
 
 use super::three::{SphericalAngles, ThreeMatrix, ThreeVector};
 
@@ -53,25 +51,11 @@ pub fn rotate_spherical_angles(zenith: f64, azimuth: f64, rotation: ThreeMatrix)
     (theta, phi)
 }
 
-#[pyfunction(name = "rotation_matrix_from_vertices")]
-pub fn _py_rotation_matrix_from_vertices(vertex_1: [f64; 3], vertex_2: [f64; 3]) -> Py<PyArray2<f64>> {
-    let rotation = rotation_matrix_from_vertices(vertex_1.into(), vertex_2.into());
-    rotation.into()
-}
-
-#[pyfunction(name = "rotation_matrix_from_delta_x")]
-pub fn _py_rotation_matrix_from_delta_x(delta_x: [f64; 3]) -> Py<PyArray2<f64>> {
-    let rotation = rotation_matrix_from_delta_x(delta_x.into());
-    rotation.into()
-}
-
-#[pyfunction]
 pub fn zenith_azimuth_to_theta_phi(zenith: f64, azimuth: f64, delta_x: [f64; 3]) -> (f64, f64) {
     let rotation = rotation_matrix_from_delta_x(delta_x.into());
     rotate_spherical_angles(zenith, azimuth, rotation)
 }
 
-#[pyfunction]
 pub fn zenith_azimuth_to_theta_phi_optimized(
     zenith: f64,
     azimuth: f64,
@@ -82,13 +66,11 @@ pub fn zenith_azimuth_to_theta_phi_optimized(
     rotate_spherical_angles(zenith, azimuth, rotation)
 }
 
-#[pyfunction]
 pub fn theta_phi_to_zenith_azimuth(theta: f64, phi: f64, delta_x: [f64; 3]) -> (f64, f64) {
     let rotation = rotation_matrix_from_delta_x(delta_x.into());
     rotate_spherical_angles(theta, phi, rotation.transpose())
 }
 
-#[pyfunction]
 pub fn theta_phi_to_zenith_azimuth_optimized(
     theta: f64,
     phi: f64,

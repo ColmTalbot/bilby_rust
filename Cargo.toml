@@ -12,10 +12,17 @@ exclude = ["examples/demonstration.ipynb", ".github/", ".gitignore", ".cargo_vcs
 
 [dependencies]
 chrono = "0.4"
-numpy = "0.30"
-pyo3 = { version = "0.30", features = ["abi3-py310", "abi3t-py315", "chrono", "extension-module", "num-complex"] }
+numpy = { version = "0.30", optional = true }
+pyo3 = { version = "0.30", optional = true }
 num-complex = "0.4"
+
+[features]
+default = []
+# Build the Python bindings.
+python = ["dep:pyo3", "dep:numpy", "pyo3/abi3-py310", "pyo3/abi3t-py315", "pyo3/chrono", "pyo3/num-complex"]
+# Used by maturin when building the Python extension module.
+extension-module = ["python", "pyo3/extension-module"]
 
 [lib]
 name = "bilby_rust"
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "rlib"]

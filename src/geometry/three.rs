@@ -1,8 +1,6 @@
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
 use num_complex::Complex;
-use numpy::{PyArray1, PyArray2};
-use pyo3::{Py, Python};
 
 /// Container for spherical angles
 ///
@@ -194,13 +192,6 @@ impl From<&ThreeVector> for Vec<f64> {
     }
 }
 
-impl From<ThreeVector> for Py<PyArray1<f64>> {
-    fn from(vector: ThreeVector) -> Self {
-        let output = vec![vector.x, vector.y, vector.z];
-        Python::attach(|py| PyArray1::from_vec(py, output).unbind())
-    }
-}
-
 /// Add two vectors element-wise
 impl Add for ThreeVector {
     type Output = Self;
@@ -383,13 +374,6 @@ impl From<ThreeMatrix> for [[f64; 3]; 3] {
 impl From<ThreeMatrix> for Vec<Vec<f64>> {
     fn from(matrix: ThreeMatrix) -> Self {
         matrix.rows.iter().map(|row| row.into()).collect()
-    }
-}
-
-impl From<ThreeMatrix> for Py<PyArray2<f64>> {
-    fn from(matrix: ThreeMatrix) -> Self {
-        let output: Vec<Vec<f64>> = matrix.into();
-        Python::attach(|py| PyArray2::from_vec2(py, &output).unwrap().unbind())
     }
 }
 

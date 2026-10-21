@@ -13,6 +13,9 @@ dependencies = ["numpy"]
 requires = ["maturin>=1.0,<2.0"]
 build-backend = "maturin"
 
+[tool.maturin]
+features = ["extension-module"]
+
 [project.optional-dependencies]
 test = [
     "pytest",

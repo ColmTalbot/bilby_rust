@@ -2,8 +2,6 @@ use std::f64::consts::PI;
 
 use ::chrono::{DateTime, Datelike, TimeDelta, TimeZone, Timelike, Utc};
 
-use numpy::PyArray1;
-use pyo3::{pyfunction, Py, Python};
 
 const LEAP_SECONDS: [i32; 18] = [
     46828800, 78364801, 109900802, 173059203, 252028804, 315187205, 346723206, 393984007,
@@ -25,7 +23,6 @@ const SECONDS_PER_CENTURY: f64 = DAYS_PER_CENTURY * SECONDS_PER_DAY;
 /// # Arguments
 ///
 /// * `s` - The GPS time in seconds since the GPS epoch (January 6, 1980).
-#[pyfunction]
 pub fn n_leap_seconds(s: i32) -> i32 {
     let mut i: usize = NUM_LEAPS;
     while i > 0 && LEAP_SECONDS[i - 1] > s {
@@ -44,7 +41,6 @@ pub fn n_leap_seconds(s: i32) -> i32 {
 /// # Returns
 ///
 /// A `DateTime<Utc>` representing the corresponding UTC time.
-#[pyfunction]
 pub fn gps_time_to_utc(gps_time: i32) -> DateTime<Utc> {
     let leap_seconds = n_leap_seconds(gps_time);
     let gps_epoch: DateTime<Utc> = Utc.with_ymd_and_hms(1980, 1, 6, 0, 0, 0).unwrap();
@@ -66,7 +62,6 @@ pub fn gps_time_to_utc(gps_time: i32) -> DateTime<Utc> {
 /// # Returns
 ///
 /// A `f64` representing the corresponding Julian Day.
-#[pyfunction]
 pub fn utc_to_julian_day(time: DateTime<Utc>) -> f64 {
     let year = time.year();
     let month = time.month() as i32;
@@ -105,7 +100,6 @@ pub fn utc_to_julian_day(time: DateTime<Utc>) -> f64 {
 /// # Returns
 ///
 /// A `f64` representing the Greenwich Sidereal Time in radians.
-#[pyfunction]
 pub fn greenwich_sidereal_time(gps_time: f64, equation_of_equinoxes: f64) -> f64 {
     let julian_day = utc_to_julian_day(gps_time_to_utc(gps_time.floor() as i32));
 
@@ -140,7 +134,6 @@ pub fn greenwich_sidereal_time(gps_time: f64, equation_of_equinoxes: f64) -> f64
 /// # Returns
 ///
 /// A `f64` representing the Greenwich Sidereal Time in radians.
-#[pyfunction]
 pub fn greenwich_mean_sidereal_time(gps_time: f64) -> f64 {
     greenwich_sidereal_time(gps_time, 0.0)
 }
@@ -165,13 +158,11 @@ pub fn greenwich_mean_sidereal_time(gps_time: f64) -> f64 {
 /// # Returns
 ///
 /// A vector of `f64` representing the corresponding Greenwich Mean Sidereal Times in radians.
-#[pyfunction]
-pub fn greenwich_mean_sidereal_time_vectorized(gps_times: Vec<f64>) -> Py<PyArray1<f64>> {
-    let times = gps_times
+pub fn greenwich_mean_sidereal_time_vectorized(gps_times: &[f64]) -> Vec<f64> {
+    gps_times
         .iter()
         .map(|&gps_time| greenwich_mean_sidereal_time(gps_time))
-        .collect();
-    Python::attach(|py| PyArray1::from_vec(py, times).unbind())
+        .collect()
 }
 
 #[cfg(test)]
