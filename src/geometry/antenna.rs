@@ -1,8 +1,6 @@
 use std::f64::consts::{FRAC_PI_2, PI};
 
 use num_complex::Complex;
-use numpy::{PyArray1, PyArray2, PyArray3};
-use pyo3::{exceptions::PyValueError, pyfunction, Py, PyErr, PyResult, Python};
 
 const SPEED_OF_LIGHT_IN_VACUUM: f64 = 299_792_458.0;
 
@@ -119,40 +117,6 @@ const GEOCENTER: ThreeVector = ThreeVector {
     z: 0.0,
 };
 
-/// Calculate a polarization tensor for a given sky location and GPS time.
-///
-/// # Arguments
-///
-/// * `ra` - The right ascension of the source in radians.
-/// * `dec` - The declination of the source in radians.
-/// * `gps_time` - The GPS time of the observation.
-/// * `psi` - The polarization angle of the source.
-/// * `mode` - The polarization mode to calculate. This can be one of `'plus'`, `'cross'`,
-/// `'longitudinal'`, `'breathing'`, `'x'`, or `'y'`.
-///
-/// # Returns
-///
-/// A `ThreeMatrix` representing the polarization tensor or a 3x3 `numpy` array
-/// when called through the `Python` bindings.
-#[pyfunction]
-pub fn get_polarization_tensor(
-    ra: f64,
-    dec: f64,
-    gps_time: f64,
-    psi: f64,
-    mode: &str,
-) -> PyResult<Py<PyArray2<f64>>> {
-    let result =
-        std::panic::catch_unwind(|| polarization_tensor(ra, dec, gps_time, psi, mode).into());
-
-    match result {
-        Ok(array) => Ok(array),
-        Err(_) => Err(PyErr::new::<PyValueError, _>(
-            "Error in get_polarization_tensor: {mode} not a polarization mode!",
-        )),
-    }
-}
-
 /// Calculate the time delay between two vertices for a given sky location and GPS time.
 ///
 /// # Arguments
@@ -166,7 +130,6 @@ pub fn get_polarization_tensor(
 /// # Returns
 ///
 /// The time delay between the two vertices in seconds.
-#[pyfunction]
 pub fn time_delay_geocentric(
     vertex_1: [f64; 3],
     vertex_2: [f64; 3],
@@ -201,7 +164,6 @@ fn _time_delay_from_vertices(
 /// # Returns
 ///
 /// The time delay between the vertex and the geocenter in seconds.
-#[pyfunction]
 pub fn time_delay_from_geocenter(vertex: [f64; 3], ra: f64, dec: f64, gps_time: f64) -> f64 {
     _time_delay_from_vertices(vertex.into(), GEOCENTER, ra, dec, gps_time)
 }
@@ -217,14 +179,13 @@ pub fn time_delay_from_geocenter(vertex: [f64; 3], ra: f64, dec: f64, gps_time: 
 /// 
 /// # Returns
 /// 
-/// A `numpy` array representing the arm vector.
-#[pyfunction]
+/// A `ThreeVector` representing the arm vector.
 pub fn calculate_arm(
     arm_tilt: f64,
     arm_azimuth: f64,
     longitude: f64,
     latitude: f64,
-) -> Py<PyArray1<f64>> {
+) -> ThreeVector {
     let vec1: ThreeVector = SphericalAngles {
         zenith: -latitude,
         azimuth: longitude,
@@ -245,9 +206,7 @@ pub fn calculate_arm(
         azimuth: FRAC_PI_2 - arm_azimuth,
     }
     .into();
-    ThreeMatrix::from_columns([vec1, vec2, vec3])
-        .dot(arm_vector)
-        .into()
+    ThreeMatrix::from_columns([vec1, vec2, vec3]).dot(arm_vector)
 }
 
 /// Calculate the detector tensor for a given set of arm vectors.
@@ -259,11 +218,9 @@ pub fn calculate_arm(
 /// 
 /// # Returns
 /// 
-/// A `numpy` array representing the detector tensor.
-#[pyfunction]
-pub fn detector_tensor(x: [f64; 3], y: [f64; 3]) -> Py<PyArray2<f64>> {
-    let det = DetectorGeometry::new(x.into(), y.into(), 1.0);
-    det.detector_tensor.into()
+/// A `ThreeMatrix` representing the detector tensor.
+pub fn detector_tensor(x: [f64; 3], y: [f64; 3]) -> ThreeMatrix {
+    DetectorGeometry::new(x.into(), y.into(), 1.0).detector_tensor
 }
 
 /// A vectorized version of [`time_delay_from_geocenter`].
@@ -277,21 +234,19 @@ pub fn detector_tensor(x: [f64; 3], y: [f64; 3]) -> Py<PyArray2<f64>> {
 ///
 /// # Returns
 ///
-/// A `numpy` array of time delays in seconds.
+/// A vector of time delays in seconds.
 ///
 /// [`time_delay_from_geocenter`]: ./fn.time_delay_from_geocenter.html
-#[pyfunction]
 pub fn time_delay_from_geocenter_vectorized(
     vertex: [f64; 3],
     ra: f64,
     dec: f64,
-    gps_times: Vec<f64>,
-) -> Py<PyArray1<f64>> {
-    let times = gps_times
+    gps_times: &[f64],
+) -> Vec<f64> {
+    gps_times
         .iter()
         .map(|&gps_time| time_delay_from_geocenter(vertex, ra, dec, gps_time))
-        .collect();
-    Python::attach(|py| PyArray1::from_vec(py, times).unbind())
+        .collect()
 }
 
 /// Calculate the detector tensor for a set of GPS times.
@@ -309,20 +264,18 @@ pub fn time_delay_from_geocenter_vectorized(
 ///
 /// # Returns
 ///
-/// A `numpy` array of detector tensors (`shape=(N,3,3)`).
+/// A vector of `N` polarization tensors.
 ///
 /// [`polarization_tensor`]: ./fn.polarization_tensor.html
-#[pyfunction]
 pub fn time_dependent_polarization_tensor(
     ra: f64,
     dec: f64,
-    gps_times: Vec<f64>,
+    gps_times: &[f64],
     psi: f64,
     mode: &str,
-) -> Py<PyArray3<f64>> {
-    let output: Vec<Vec<Vec<f64>>> = gps_times
+) -> Vec<ThreeMatrix> {
+    gps_times
         .iter()
-        .map(|&gps_time| polarization_tensor(ra, dec, gps_time, psi, mode).into())
-        .collect();
-    Python::attach(|py| PyArray3::from_vec3(py, &output).unwrap().unbind())
+        .map(|&gps_time| polarization_tensor(ra, dec, gps_time, psi, mode))
+        .collect()
 }

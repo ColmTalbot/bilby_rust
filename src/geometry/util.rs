@@ -1,7 +1,5 @@
 use std::f64::consts::PI;
 
-use pyo3::pyfunction;
-
 use super::{
     three::{SphericalAngles, ThreeVector},
     time,
@@ -14,7 +12,6 @@ use super::{
 /// 
 /// - `theta` is the zenith angle (pi / 2 is the equator)
 /// - `phi` is the azimuthal angle (0 is the Greenwich meridian)
-#[pyfunction]
 pub fn ra_dec_to_theta_phi(ra: f64, dec: f64, gps_time: f64) -> (f64, f64) {
     let gmst = time::greenwich_mean_sidereal_time(gps_time) % (2.0 * PI);
     let theta = PI / 2.0 - dec;
@@ -28,7 +25,6 @@ pub fn ra_dec_to_theta_phi(ra: f64, dec: f64, gps_time: f64) -> (f64, f64) {
 /// 
 /// - `theta` is the zenith angle (pi / 2 is the equator)
 /// - `phi` is the azimuthal angle (0 is the Greenwich meridian)
-#[pyfunction]
 pub fn theta_phi_to_ra_dec(theta: f64, phi: f64, gps_time: f64) -> (f64, f64) {
     let gmst = time::greenwich_mean_sidereal_time(gps_time) % (2.0 * PI);
     let ra = phi + gmst;
