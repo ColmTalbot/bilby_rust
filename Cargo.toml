@@ -1,6 +1,6 @@
 [package]
 name = "bilby_rust"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Colm Talbot <talbotcolm@gmail.com>"]
 edition = "2021"
 description = "Rust implementation of domain-specific geometrical operations for Bilby to mirror the functionality in bilby-cython using PyO3."
