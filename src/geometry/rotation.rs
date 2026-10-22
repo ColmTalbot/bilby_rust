@@ -1,6 +1,5 @@
 use std::f64::consts::{FRAC_PI_2, PI};
 
-
 use super::three::{SphericalAngles, ThreeMatrix, ThreeVector};
 
 pub fn rotation_matrix_from_vertices(vertex_1: ThreeVector, vertex_2: ThreeVector) -> ThreeMatrix {
@@ -56,6 +55,12 @@ pub fn zenith_azimuth_to_theta_phi(zenith: f64, azimuth: f64, delta_x: [f64; 3])
     rotate_spherical_angles(zenith, azimuth, rotation)
 }
 
+/// Convert from the detector frame of Roulet et al. (arXiv:2207.03508),
+/// defined by two detector vertices, to Earth-fixed spherical angles.
+///
+/// The rows of [`rotation_matrix_from_vertices`] are the frame's axes in
+/// Earth-fixed coordinates, so its transpose takes detector-frame vectors
+/// to Earth-fixed ones.
 pub fn zenith_azimuth_to_theta_phi_optimized(
     zenith: f64,
     azimuth: f64,
@@ -63,7 +68,7 @@ pub fn zenith_azimuth_to_theta_phi_optimized(
     vertex_2: [f64; 3],
 ) -> (f64, f64) {
     let rotation = rotation_matrix_from_vertices(vertex_1.into(), vertex_2.into());
-    rotate_spherical_angles(zenith, azimuth, rotation)
+    rotate_spherical_angles(zenith, azimuth, rotation.transpose())
 }
 
 pub fn theta_phi_to_zenith_azimuth(theta: f64, phi: f64, delta_x: [f64; 3]) -> (f64, f64) {
@@ -71,6 +76,7 @@ pub fn theta_phi_to_zenith_azimuth(theta: f64, phi: f64, delta_x: [f64; 3]) -> (
     rotate_spherical_angles(theta, phi, rotation.transpose())
 }
 
+/// The inverse of [`zenith_azimuth_to_theta_phi_optimized`].
 pub fn theta_phi_to_zenith_azimuth_optimized(
     theta: f64,
     phi: f64,
@@ -78,7 +84,7 @@ pub fn theta_phi_to_zenith_azimuth_optimized(
     vertex_2: [f64; 3],
 ) -> (f64, f64) {
     let rotation = rotation_matrix_from_vertices(vertex_1.into(), vertex_2.into());
-    rotate_spherical_angles(theta, phi, rotation.transpose())
+    rotate_spherical_angles(theta, phi, rotation)
 }
 
 #[cfg(test)]
@@ -122,5 +128,50 @@ mod tests {
         let result: (f64, f64) =
             zenith_azimuth_to_theta_phi_optimized(zenith, azimuth, vertex_1, vertex_2);
         assert_approx_eq!(result, (theta, phi));
+    }
+
+    // The H1 and L1 vertices (metres, geocentric).
+    const H1: [f64; 3] = [-2161414.92636, -3834695.17889, 4600350.22664];
+    const L1: [f64; 3] = [-74276.0447238, -5496283.71971, 3224257.01744];
+
+    /// In both detector frames the zenith is the angle between the line of
+    /// sight and the line from the second vertex to the first, so the delay
+    /// between the detectors depends on it alone.
+    #[test]
+    fn test_zenith_is_angle_from_baseline() {
+        let delta: [f64; 3] = std::array::from_fn(|i| H1[i] - L1[i]);
+        let baseline = ThreeVector::from(delta).normalize();
+        for i in 0..20 {
+            let zenith = 0.05 + 3.0 * i as f64 / 20.0;
+            let azimuth = 0.3 + 0.31 * i as f64;
+            for optimized in [false, true] {
+                let (theta, phi) = if optimized {
+                    zenith_azimuth_to_theta_phi_optimized(zenith, azimuth, H1, L1)
+                } else {
+                    zenith_azimuth_to_theta_phi(zenith, azimuth, delta)
+                };
+                let line_of_sight: ThreeVector = SphericalAngles {
+                    zenith: theta,
+                    azimuth: phi,
+                }
+                .into();
+                assert!(
+                    (line_of_sight.dot(baseline) - zenith.cos()).abs() < 1e-12,
+                    "optimized: {optimized}"
+                );
+            }
+        }
+    }
+
+    /// The two frames share the zenith angle and differ in azimuth only.
+    #[test]
+    fn test_optimized_and_delta_frames_share_zenith() {
+        let delta: [f64; 3] = std::array::from_fn(|i| H1[i] - L1[i]);
+        for i in 0..20 {
+            let (theta, phi) = (0.1 + 0.15 * i as f64, -3.0 + 0.3 * i as f64);
+            let (zenith_1, _) = theta_phi_to_zenith_azimuth(theta, phi, delta);
+            let (zenith_2, _) = theta_phi_to_zenith_azimuth_optimized(theta, phi, H1, L1);
+            assert!((zenith_1 - zenith_2).abs() < 1e-12);
+        }
     }
 }
